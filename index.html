@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Walk the Line — talk to the floor, find the root cause</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Walk the Line">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#24507c">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<style>
+  :root{
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --bg:#e9ebe8; --panel:#fff; --panel-2:#f5f6f4; --ink:#1a2026; --ink-soft:#3c454f;
+    --muted:#6c7681; --line:#d9ddd8; --line-strong:#c3c8c2; --accent:#24507c; --accent-bg:#e6edf5;
+    --good:#2f7a4f; --good-bg:#e6f1ea; --warn:#a9701a; --warn-bg:#f5ecd9; --crit:#b23b34; --crit-bg:#f6e2e0;
+    --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px rgba(20,30,40,.06);
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --bg:#12161a; --panel:#1a2026; --panel-2:#212a31; --ink:#e9ece9; --ink-soft:#bcc4cb; --muted:#869099;
+    --line:#2b343c; --line-strong:#3a444d; --accent:#78aadd; --accent-bg:#1c2a39;
+    --good:#62b98a; --good-bg:#16271e; --warn:#d19a44; --warn-bg:#2a2413; --crit:#e2726a; --crit-bg:#2c1a18;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="light"]{--bg:#e9ebe8;--panel:#fff;--panel-2:#f5f6f4;--ink:#1a2026;--ink-soft:#3c454f;--muted:#6c7681;--line:#d9ddd8;--line-strong:#c3c8c2;--accent:#24507c;--accent-bg:#e6edf5;--good:#2f7a4f;--good-bg:#e6f1ea;--warn:#a9701a;--warn-bg:#f5ecd9;--crit:#b23b34;--crit-bg:#f6e2e0;--shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px rgba(20,30,40,.06);}
+  :root[data-theme="dark"]{--bg:#12161a;--panel:#1a2026;--panel-2:#212a31;--ink:#e9ece9;--ink-soft:#bcc4cb;--muted:#869099;--line:#2b343c;--line-strong:#3a444d;--accent:#78aadd;--accent-bg:#1c2a39;--good:#62b98a;--good-bg:#16271e;--warn:#d19a44;--warn-bg:#2a2413;--crit:#e2726a;--crit-bg:#2c1a18;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box;} html,body{height:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+
+  header.top{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;background:var(--panel);border-bottom:1px solid var(--line);}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .mark{width:38px;height:38px;flex-shrink:0;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:-.5px;}
+  @media (prefers-color-scheme:dark){.mark{color:#0d1216;}} :root[data-theme="dark"] .mark{color:#0d1216;} :root[data-theme="light"] .mark{color:#fff;}
+  h1{font-size:1rem;margin:0;white-space:nowrap;} .tagline{color:var(--muted);font-size:.75rem;margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .top-actions{display:flex;gap:6px;flex-shrink:0;}
+  .ic{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:.78rem;cursor:pointer;font-family:var(--sans);white-space:nowrap;}
+  .ic:hover{border-color:var(--line-strong);}
+  .ic.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+
+  /* station strip */
+  .strip-wrap{flex-shrink:0;background:var(--panel);border-bottom:1px solid var(--line);}
+  .strip-hint{max-width:900px;margin:0 auto;padding:8px 16px 0;font-size:.72rem;color:var(--muted);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
+  .strip{display:flex;gap:0;overflow-x:auto;padding:8px 16px 12px;align-items:stretch;-webkit-overflow-scrolling:touch;}
+  .st{flex:0 0 auto;display:flex;align-items:center;}
+  .st-card{width:112px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:10px 8px 9px;cursor:pointer;text-align:center;position:relative;transition:border-color .15s,transform .1s;}
+  .st-card:hover{border-color:var(--line-strong);} .st-card:active{transform:scale(.97);}
+  .st-card.active{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 3px var(--accent-bg);}
+  .st-card.visited{border-color:var(--good);}
+  .st-face{font-size:30px;line-height:1;margin-bottom:4px;}
+  .st-role{font-size:.78rem;font-weight:600;line-height:1.2;}
+  .st-who{font-size:.66rem;color:var(--muted);margin-top:2px;line-height:1.2;}
+  .st-card .badge{position:absolute;top:6px;right:6px;width:19px;height:19px;border-radius:50%;background:var(--good);color:#fff;font-size:12px;line-height:1;display:none;align-items:center;justify-content:center;font-weight:700;}
+  .st-card.visited .badge{display:flex;}
+  .st-arrow{color:var(--line-strong);font-size:1.1rem;padding:0 3px;align-self:center;flex:0 0 auto;}
+
+  /* main */
+  .main{flex:1;overflow-y:auto;}
+  .inner{max-width:780px;margin:0 auto;padding:22px 18px 8px;}
+  .welcome .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .welcome h2{font-size:1.4rem;margin:0 0 10px;letter-spacing:-.01em;text-wrap:balance;}
+  .welcome p{color:var(--ink-soft);font-size:.95rem;max-width:60ch;margin:0 0 12px;}
+  .welcome .steps{display:flex;flex-direction:column;gap:8px;margin:14px 0 0;}
+  .welcome .steps div{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;color:var(--ink-soft);}
+  .welcome .steps b{font-family:var(--mono);color:var(--accent);flex-shrink:0;}
+
+  .chat-head{display:flex;align-items:center;gap:12px;padding:4px 0 14px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .head-face{font-size:40px;line-height:1;flex-shrink:0;}
+  .chat-head h2{margin:0;font-size:1.05rem;}
+  .chat-head .sub{font-size:.8rem;color:var(--muted);}
+
+  .msg{display:flex;gap:11px;margin-bottom:18px;}
+  .avatar{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:20px;line-height:1;}
+  .msg.user .avatar{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line);font-family:var(--mono);font-size:.62rem;font-weight:700;}
+  .msg.assistant .avatar{background:var(--accent-bg);}
+  .bubble{flex:1;min-width:0;padding-top:5px;}
+  .who{font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:3px;}
+  .md{font-size:.94rem;color:var(--ink);} .md>*:first-child{margin-top:0;} .md>*:last-child{margin-bottom:0;}
+  .md p{margin:0 0 10px;} .md h2{font-size:1.02rem;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+  .md h3{font-size:.9rem;margin:14px 0 6px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;}
+  .md ul,.md ol{margin:0 0 10px;padding-left:22px;} .md li{margin:4px 0;} .md strong{color:var(--ink);font-weight:650;} .md em{color:var(--ink-soft);}
+  .md code{font-family:var(--mono);font-size:.85em;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+  .md blockquote{margin:0 0 10px;padding:8px 14px;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0;color:var(--ink-soft);}
+  .cursor{display:inline-block;width:7px;height:15px;background:var(--accent);border-radius:1px;vertical-align:-2px;animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .suggest{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 6px;}
+  .suggest button{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:7px 12px;font-size:.8rem;cursor:pointer;color:var(--ink-soft);}
+  .suggest button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+  .err-banner{background:var(--crit-bg);border:1px solid var(--crit);border-radius:9px;padding:10px 14px;font-size:.84rem;color:var(--ink-soft);margin-bottom:12px;} .err-banner b{color:var(--crit);}
+
+  /* composer */
+  .composer-wrap{flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 16px calc(11px + env(safe-area-inset-bottom));}
+  .rc-bar{display:none;width:100%;max-width:780px;margin:0 auto 9px;background:var(--accent);color:#fff;border:none;border-radius:11px;padding:12px;font-family:var(--sans);font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:var(--shadow);}
+  @media (prefers-color-scheme:dark){.rc-bar{color:#0d1216;}} :root[data-theme="dark"] .rc-bar{color:#0d1216;} :root[data-theme="light"] .rc-bar{color:#fff;}
+  .rc-bar.show{display:block;}
+  .composer{max-width:780px;margin:0 auto;display:flex;gap:9px;align-items:flex-end;}
+  .micbtn{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;width:44px;height:44px;flex-shrink:0;cursor:pointer;font-size:1.15rem;display:none;place-items:center;}
+  .micbtn.show{display:grid;} .micbtn:hover{border-color:var(--line-strong);}
+  .micbtn.rec{border-color:var(--crit);background:var(--crit-bg);animation:pulse 1s infinite;}
+  @keyframes pulse{50%{opacity:.5;}}
+  textarea#input{flex:1;resize:none;font-family:var(--sans);font-size:.95rem;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;max-height:160px;outline:none;line-height:1.5;}
+  textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+  #send{background:var(--accent);color:#fff;border:none;border-radius:11px;width:44px;height:44px;flex-shrink:0;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;}
+  @media (prefers-color-scheme:dark){#send{color:#0d1216;}} :root[data-theme="dark"] #send{color:#0d1216;} :root[data-theme="light"] #send{color:#fff;}
+  #send:disabled{opacity:.4;cursor:not-allowed;}
+  .composer-note{max-width:780px;margin:6px auto 0;font-size:.7rem;color:var(--muted);text-align:center;}
+
+  /* modal + toast */
+  .backdrop{position:fixed;inset:0;background:rgba(10,14,18,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .backdrop.show{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);max-width:520px;width:100%;padding:24px;max-height:90vh;overflow-y:auto;}
+  .modal h2{margin:0 0 4px;font-size:1.15rem;} .modal p{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px;}
+  .modal label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-soft);margin:12px 0 5px;}
+  .modal input,.modal select{width:100%;font-family:var(--mono);font-size:.9rem;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;outline:none;}
+  .modal select{font-family:var(--sans);}
+  .modal input:focus,.modal select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+  .modal .hint{font-size:.74rem;color:var(--muted);margin-top:5px;} .modal .hint a{color:var(--accent);}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .btn{font-family:var(--sans);font-size:.88rem;font-weight:600;cursor:pointer;border-radius:9px;padding:10px 18px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  @media (prefers-color-scheme:dark){.btn.primary{color:#0d1216;}} :root[data-theme="dark"] .btn.primary{color:#0d1216;} :root[data-theme="light"] .btn.primary{color:#fff;}
+  .callout{background:var(--warn-bg);border:1px solid var(--warn);border-radius:9px;padding:10px 13px;font-size:.8rem;color:var(--ink-soft);margin-top:12px;} .callout b{color:var(--ink);}
+  .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:.85rem;box-shadow:var(--shadow);opacity:0;transition:opacity .25s;pointer-events:none;z-index:60;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="mark">FD</div>
+      <div style="min-width:0"><h1>Walk the Line</h1><p class="tagline">Talk to the floor · find the root cause</p></div>
+    </div>
+    <div class="top-actions">
+      <button class="ic" id="voiceBtn" type="button" title="Have the people read their answers aloud" style="display:none">🔇 Voice</button>
+      <button class="ic" id="setBtn" type="button">⚙ Setup</button>
+      <button class="ic" id="resetBtn" type="button" title="Clear all conversations">↺</button>
+      <button class="ic" id="themeBtn" type="button">◐</button>
+    </div>
+  </header>
+
+  <div class="strip-wrap">
+    <div class="strip-hint">The line · tap a person to talk to them ›</div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="main"><div class="inner" id="inner"></div></div>
+
+  <div class="composer-wrap">
+    <button class="rc-bar" id="rcBar" type="button">◆ Find the root cause</button>
+    <div class="composer">
+      <button class="micbtn" id="micBtn" type="button" title="Speak your question">🎤</button>
+      <textarea id="input" rows="1" placeholder="Pick a person above, then ask them something…"></textarea>
+      <button id="send" type="button">↑</button>
+    </div>
+    <p class="composer-note">Runs in your browser with your own Anthropic key · the people are AI stand-ins for each role, to help you think and rehearse the walk</p>
+  </div>
+
+  <div class="backdrop" id="backdrop">
+    <div class="modal">
+      <h2>Set up the tool</h2>
+      <p>This talks to Claude from your browser, so it needs your own Anthropic API key. It stays on this device and is only ever sent to Anthropic.</p>
+      <label for="keyInput">Anthropic API key</label>
+      <input id="keyInput" type="password" placeholder="sk-ant-…" spellcheck="false" autocomplete="off">
+      <div class="hint">Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Set a low spend limit while you try it.</div>
+      <label for="modelSel">Model</label>
+      <select id="modelSel">
+        <option value="claude-opus-4-8">Claude Opus 4.8 — sharpest (higher cost)</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — strong &amp; cheaper (good default)</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest &amp; cheapest</option>
+      </select>
+      <div class="hint">A walk down the line is many short messages, so Sonnet keeps cost sensible.</div>
+      <div class="callout"><b>Never paste your key into a chat or share this file with the key saved in it.</b> A browser page can't hide a key — treat it like cash and keep a spend cap on it.</div>
+      <div class="modal-actions">
+        <button class="btn" id="setCancel" type="button">Cancel</button>
+        <button class="btn primary" id="setSave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const LS = { key:"khan-mat-anthropic-key", model:"khan-mat-model", theme:"khan-mat-theme", convos:"khan-mat-linewalk", voice:"khan-mat-voice" };
+
+/* ---------- the line ---------- */
+const SHARED = `The line builds Hunter-class frigate units from raw steel plate: cutting, small-parts sorting, laydown/storage, panel fabrication, stiffener mounting on a welding portal, sub-assembly and dressing, then a five-station unit line running on a fixed pulse. High-mix, one-of-a-kind — nothing is made twice. What's really going on right now (weave it in naturally as the conversation earns it, never recite it as a list): about three months ago the steel-plate supplier changed and the new plate is more variable — more mill scale, not always flat — so there's more grinding and the odd weld defect turning up downstream. Work is released to the floor by the date it is CUT, not when it's needed, so material is prepared far too early; the storage halls are jammed and space, not machine capacity, is what actually stops work. Stiffener mounting has taken on several new starters still learning the job. And everyone is under pressure to keep the unit line moving on its pulse.`;
+
+const STATIONS = [
+  { id:"cut",   emoji:"👷‍♂️", role:"Cutting",           who:"Dave · cutting lead",
+    focus:`You cut plate and profile — the gate to the whole line. You're measured on tonnes cut per week, so you keep cutting; where it goes afterwards isn't really your problem. You release to the cut-programme dates. Lately you've noticed the new plate carries more scale than it used to.` },
+  { id:"parts", emoji:"👩‍🏭", role:"Small parts",       who:"Priya · sorting & routing",
+    focus:`Small parts come off the beds and you sort, contain and route them. Your headache is parts going missing between here and where they're used — completion gets signed off by the batch, but parts are consumed one at a time, so the paperwork says done while people can't find the actual bits. A lot of your day is chasing.` },
+  { id:"store", emoji:"🧑‍🏭", role:"Laydown / storage", who:"Tom · laydown coordinator",
+    focus:`You run the storage halls. They're full — you're playing Tetris every day, and when there's no room, work upstream simply has to stop. Things are cut so far ahead they sit for months. It's space, not machines, that stops this place.` },
+  { id:"panel", emoji:"👨‍🏭", role:"Panel fab",         who:"Sam · panel welder",
+    focus:`You fabricate and seam-weld panels. Lately you're grinding far more than usual — the plate isn't as flat and you're getting porosity in welds you didn't used to. It slows you right down. You reckon the material changed but nobody's said so officially.` },
+  { id:"stiff", emoji:"👷", role:"Stiffener mounting",who:"Jack · portal lead",
+    focus:`You mount bulkhead stiffeners on the welding portal. You've several new starters still building their skills. Under pulse-time pressure they rush, mistakes creep in, and rework bounces back to you. You blame the panels you're handed (not flat) and the time pressure. You're a pinch point and you feel it.` },
+  { id:"sub",   emoji:"👩‍🔧", role:"Sub-assembly",      who:"Maria · sub-assembly & dressing",
+    focus:`You build sub-assemblies from stiffened panels and dress them. You wait a lot on stiffener mounting, and quality problems from upstream land on you to fix. When things arrive late you're squeezed hard to keep the unit line fed.` },
+  { id:"unit",  emoji:"👩‍💼", role:"Unit line",         who:"Nadia · unit-line supervisor",
+    focus:`You run the five-station unit line on a fixed pulse — units moving station to station on the beat. Units reach you not quite ready: missing parts, bits needing rework. You're under real pressure to hold the beat, and you feel everything wrong upstream but can't see the cause from where you stand.` }
+];
+const NAME = st => st.who.split(" · ")[0];
+const SUB  = st => st.who.split(" · ")[1] || "";
+
+function personaSystem(st){
+  return `You are ${NAME(st)}, the ${st.role} worker in a naval shipyard building Hunter-class frigates. Speak in the first person, plainly and briefly — usually 2 to 4 sentences — like a real person on the floor, with a bit of character and dry humour. ${st.focus}
+
+${SHARED}
+
+How to behave: answer whatever the improvement lead asks, but reveal things naturally as they ask good questions — don't dump everything at once, and don't lecture. It's fine and good to point up or down the line ("the panels I get aren't flat", "ask cutting why it turns up so early"). Stay in character always; never mention being an AI or a model. If they ask something you honestly wouldn't know from your spot on the line, say so in character and suggest who would know.`;
+}
+
+const ANALYST = `You are a plain-spoken continuous-improvement coach who has spent years on manufacturing floors including naval shipbuilding. You've just been handed the notes from a walk down the line, where an improvement lead interviewed each station in turn. Your job is to connect the threads across stations and find where the flow is really breaking and why.
+
+Reason with Theory of Constraints / Drum-Buffer-Rope (find the one constraint that paces the system; it may be space, information or a decision, not a machine), Lean (the eight wastes, flow before efficiency, pull not push, process vs standard, visual management), and the four types of problem. Trace symptoms to their cause — a quality issue at one station is often created by a change somewhere else. Name the most likely ROOT CAUSE(S), each classified as one of: material / supplier change · people / new starters · capability · time & pressure · process (how work is released) · space. A symptom can have more than one root, and the loudest complaint is rarely the cause.
+
+Answer in four parts, with these exact headings:
+## Where it's breaking
+The stage or condition that's pacing the whole line, and the evidence from the interviews — quote what people said.
+## Why — tracing the threads
+The chain of cause across stations, in plain words. Show how a symptom at one station leads back to a change or condition elsewhere. Name the root-cause category for each thread.
+## What to do
+Ranked, cheapest and most reversible first. For each, say what would have to be true for it to work.
+## The principle
+For each recommendation, name the concept it comes from, why it exists, and what they gain by understanding it.
+
+Rules: every recommendation traces to a named principle. Plain English, short sentences, no consultant jargon. Never blame a person or a role — aim at the system. Say what is uncertain and what to go and verify on the floor. Build the reader's capability.`;
+
+const STARTERS = ["Walk me through your typical day.","Where do you end up waiting?","Any quality issues lately?","What piles up around here?","What would you change if you could?"];
+
+/* ---------- state ---------- */
+let convos = load(LS.convos, {});
+let active = null, mode = "welcome", streaming = false;
+let apiKey = localStorage.getItem(LS.key) || "";
+let model = localStorage.getItem(LS.model) || "claude-opus-4-8";
+
+function load(k,d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
+function saveConvos(){ localStorage.setItem(LS.convos, JSON.stringify(convos)); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function stById(id){ return STATIONS.find(s=>s.id===id); }
+function visited(id){ return (convos[id]||[]).some(m=>m.role==="assistant"); }
+function nVisited(){ return STATIONS.filter(s=>visited(s.id)).length; }
+
+/* ---------- tiny markdown ---------- */
+function md(src){
+  const lines = esc(src).split("\n"); let html="",i=0;
+  const inline = t => t.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  while(i<lines.length){ let ln=lines[i];
+    if(/^\s*###\s+/.test(ln)){ html+="<h3>"+inline(ln.replace(/^\s*###\s+/,""))+"</h3>"; i++; continue; }
+    if(/^\s*##\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*##\s+/,""))+"</h2>"; i++; continue; }
+    if(/^\s*#\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*#\s+/,""))+"</h2>"; i++; continue; }
+    if(/^\s*(-{3,})\s*$/.test(ln)){ html+="<hr>"; i++; continue; }
+    if(/^\s*&gt;\s?/.test(ln)){ let q=[]; while(i<lines.length&&/^\s*&gt;\s?/.test(lines[i])){ q.push(inline(lines[i].replace(/^\s*&gt;\s?/,""))); i++; } html+="<blockquote>"+q.join("<br>")+"</blockquote>"; continue; }
+    if(/^\s*[-*]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*[-*]\s+/,""))+"</li>"); i++; } html+="<ul>"+it.join("")+"</ul>"; continue; }
+    if(/^\s*\d+[.)]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*\d+[.)]\s+/,""))+"</li>"); i++; } html+="<ol>"+it.join("")+"</ol>"; continue; }
+    if(/^\s*$/.test(ln)){ i++; continue; }
+    let p=[]; while(i<lines.length&&!/^\s*$/.test(lines[i])&&!/^\s*(#|-|\*|\d+[.)]|&gt;)/.test(lines[i])){ p.push(inline(lines[i])); i++; } html+="<p>"+p.join("<br>")+"</p>";
+  }
+  return html;
+}
+function stripMd(t){ return String(t).replace(/[#*`>_-]+/g," ").replace(/\s+/g," ").trim(); }
+
+/* ---------- render strip ---------- */
+function renderStrip(){
+  $("#strip").innerHTML = STATIONS.map((s,idx)=>`
+    <div class="st">
+      <div class="st-card ${active===s.id&&mode==='chat'?'active':''} ${visited(s.id)?'visited':''}" data-id="${s.id}">
+        <div class="badge">✓</div>
+        <div class="st-face">${s.emoji}</div>
+        <div class="st-role">${esc(s.role)}</div>
+        <div class="st-who">${esc(SUB(s))}</div>
+      </div>
+      ${idx<STATIONS.length-1?'<span class="st-arrow">›</span>':''}
+    </div>`).join("");
+  $("#strip").querySelectorAll(".st-card").forEach(c=>c.onclick=()=>openStation(c.dataset.id));
+}
+
+/* ---------- render main ---------- */
+const inner = $("#inner"), main = $(".main");
+function scrollDown(){ main.scrollTop = main.scrollHeight; }
+
+function renderWelcome(){
+  mode="welcome"; active=null; stopSpeak();
+  inner.innerHTML = `
+    <div class="welcome">
+      <p class="eyebrow">Walk the Line · prototype</p>
+      <h2>Talk to the floor, one person at a time.</h2>
+      <p>Tap a person in the strip above and ask them what their day is really like — where they wait, what piles up, the quality issues they're seeing. Then walk to the next station and follow the thread. When you've heard enough, hit <b>◆ Find the root cause</b> and I'll connect what everyone told you.</p>
+      <div class="steps">
+        <div><b>1</b><span>Tap a person above — start anywhere. <b>Nadia</b> on the unit line feels the pain; <b>Dave</b> at cutting is where a lot of it begins.</span></div>
+        <div><b>2</b><span>Ask real questions and push — "why is that?", "where does that come from?", "who'd know?" You can type, or tap 🎤 to speak, or turn on 🔊 to hear them reply.</span></div>
+        <div><b>3</b><span>People get a green ✓ once you've spoken to them. Visit a few, then tap <b>◆ Find the root cause</b> at the bottom.</span></div>
+      </div>
+    </div>`;
+  updateComposer();
+}
+
+function bubble(role, whoLabel, face){
+  const wrap=document.createElement("div"); wrap.className="msg "+role;
+  const av = role==="assistant" ? (face||"🔎") : "YOU";
+  wrap.innerHTML = `<div class="avatar">${av}</div><div class="bubble"><div class="who">${esc(whoLabel)}</div><div class="md"></div></div>`;
+  inner.appendChild(wrap); return wrap.querySelector(".md");
+}
+
+function openStation(id){
+  if(streaming) return;
+  stopSpeak();
+  active=id; mode="chat"; renderStrip();
+  const st=stById(id);
+  inner.innerHTML = `<div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
+  const conv = convos[id]||[];
+  conv.forEach(m=> bubble(m.role, m.role==="assistant"?NAME(st):"You", st.emoji).innerHTML = md(m.content));
+  if(!conv.length){
+    const s=document.createElement("div"); s.className="suggest";
+    s.innerHTML = STARTERS.map(q=>`<button type="button">${esc(q)}</button>`).join("");
+    inner.appendChild(s);
+    s.querySelectorAll("button").forEach(b=>b.onclick=()=>{ $("#input").value=b.textContent; send(); });
+  }
+  updateComposer(); $("#input").focus(); scrollDown();
+}
+
+function updateComposer(){
+  const input=$("#input"), rc=$("#rcBar");
+  if(mode==="chat" && active){ input.disabled=false; input.placeholder=`Ask ${NAME(stById(active))} something…`; }
+  else if(mode==="synth"){ input.disabled=true; input.placeholder="Reading the whole line…"; }
+  else { input.disabled=false; input.placeholder="Pick a person above, then ask them something…"; }
+  const n=nVisited();
+  if(n>=1 && mode!=="synth" && !streaming){ rc.classList.add("show"); rc.textContent=`◆ Find the root cause  ·  spoken to ${n}`; rc.disabled=false; }
+  else if(streaming){ rc.disabled=true; }
+  else { rc.classList.remove("show"); }
+}
+
+/* ---------- API streaming (with idle timeout so it can't freeze) ---------- */
+async function callClaude(system, messages, target, maxTokens){
+  let acc=""; target.innerHTML=`<span class="cursor"></span>`; scrollDown();
+  const ctrl = new AbortController();
+  let idle; const kick = ()=>{ clearTimeout(idle); idle=setTimeout(()=>ctrl.abort(), 45000); };
+  kick();
+  let res;
+  try{
+    res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", signal:ctrl.signal,
+      headers:{ "content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true" },
+      body: JSON.stringify({ model, max_tokens:maxTokens, system, stream:true, messages })
+    });
+    if(!res.ok){ let d=""; try{ const j=await res.json(); d=j?.error?.message||""; }catch(e){} throw new Error(friendly(res.status,d)); }
+    const reader=res.body.getReader(), dec=new TextDecoder(); let buf="";
+    while(true){ const {value,done}=await reader.read(); if(done) break; kick();
+      buf+=dec.decode(value,{stream:true}); const parts=buf.split("\n\n"); buf=parts.pop();
+      for(const part of parts){ const line=part.split("\n").find(l=>l.startsWith("data:")); if(!line) continue;
+        const data=line.slice(5).trim(); if(!data||data==="[DONE]") continue;
+        let ev; try{ ev=JSON.parse(data); }catch(e){ continue; }
+        if(ev.type==="content_block_delta" && ev.delta?.type==="text_delta"){ acc+=ev.delta.text; target.innerHTML=md(acc)+`<span class="cursor"></span>`; scrollDown(); }
+        else if(ev.type==="error"){ throw new Error(ev.error?.message||"The model returned an error."); }
+      }
+    }
+  } catch(e){
+    if(e.name==="AbortError") throw new Error("The reply stalled and timed out. Tap send again to retry.");
+    throw e;
+  } finally { clearTimeout(idle); }
+  target.innerHTML=md(acc); return acc;
+}
+function friendly(status,d){
+  if(status===401) return "That API key was rejected. Open Setup and check it (starts with “sk-ant-”).";
+  if(status===400) return "The request was rejected: "+(d||"bad request")+".";
+  if(status===429) return "Rate limited or out of credit. Wait a moment or check your usage in the Anthropic console.";
+  if(status>=500) return "Anthropic's service is busy. Give it a few seconds and try again.";
+  return "Request failed ("+status+"). "+(d||"");
+}
+function showErr(msg){ clearErr(); const b=document.createElement("div"); b.className="err-banner"; b.id="errB"; b.innerHTML="<b>Couldn't get a reply.</b> "+esc(msg); inner.appendChild(b); scrollDown(); }
+function clearErr(){ const e=$("#errB"); if(e) e.remove(); }
+
+/* ---------- send to a person ---------- */
+async function send(){
+  const input=$("#input"); const text=input.value.trim();
+  if(!text||streaming) return;
+  if(!apiKey){ openSettings(); return; }
+  if(mode!=="chat"||!active) return;
+  clearErr(); stopSpeak();
+  const st=stById(active);
+  document.querySelectorAll(".suggest").forEach(s=>s.remove());
+  convos[active]=convos[active]||[];
+  convos[active].push({role:"user",content:text});
+  bubble("user","You").innerHTML=md(text);
+  input.value=""; autosize(); saveConvos(); scrollDown();
+  streaming=true; $("#send").disabled=true; updateComposer();
+  const target=bubble("assistant", NAME(st), st.emoji);
+  const wasVisited = visited(active);
+  try{
+    const acc = await callClaude(personaSystem(st), convos[active].map(m=>({role:m.role,content:m.content})), target, 700);
+    convos[active].push({role:"assistant",content:acc}); saveConvos(); renderStrip();
+    if(!wasVisited) toast(`You've spoken to ${NAME(st)} — tap ◆ Find the root cause whenever you're ready.`);
+    if(voiceOn) speak(acc, st.id);
+  }catch(err){ target.closest(".msg").remove(); showErr(err.message||String(err)); }
+  finally{ streaming=false; $("#send").disabled=false; updateComposer(); scrollDown(); input.focus(); }
+}
+
+/* ---------- root cause ---------- */
+async function rootCause(){
+  if(streaming) return;
+  if(!apiKey){ openSettings(); return; }
+  const vs = STATIONS.filter(s=>visited(s.id));
+  if(!vs.length) return;
+  stopSpeak(); mode="synth"; active=null; renderStrip(); clearErr();
+  inner.innerHTML = `<div class="chat-head"><div class="head-face">🔎</div><div><h2>Root cause</h2><div class="sub">connecting what ${vs.length} ${vs.length>1?'people':'person'} told you</div></div></div>`;
+  const target = bubble("assistant","Diagnosis","🔎");
+  updateComposer(); $("#send").disabled=true;
+  let notes = "Notes from my walk down the line. Each station is one person I interviewed.\n\n";
+  vs.forEach(s=>{ notes += `## ${s.role} — ${s.who}\n`; (convos[s.id]||[]).forEach(m=>{ notes += (m.role==="user"?"Me: ":NAME(s)+": ")+m.content+"\n"; }); notes += "\n"; });
+  notes += `\nStations I did NOT get to: ${STATIONS.filter(s=>!visited(s.id)).map(s=>s.role).join(", ")||"none"}.\n\nWork out where the flow is really breaking and the most likely root cause(s). Trace the threads across what people said.`;
+  streaming=true; updateComposer();
+  try{ const acc = await callClaude(ANALYST, [{role:"user",content:notes}], target, 2048); if(voiceOn) speak(acc); }
+  catch(err){ target.closest(".msg").remove(); showErr(err.message||String(err)); }
+  finally{ streaming=false; $("#send").disabled=false; updateComposer(); scrollDown(); }
+}
+
+/* ---------- read-aloud (a distinct human voice per character) ---------- */
+const VOICE_OK = ("speechSynthesis" in window) && (typeof SpeechSynthesisUtterance !== "undefined");
+let voiceOn = VOICE_OK && localStorage.getItem(LS.voice)==="1";
+const SEX = { cut:"m", parts:"f", store:"m", panel:"m", stiff:"m", sub:"f", unit:"f" };
+const FEMALE=/(female|samantha|karen|moira|tessa|fiona|serena|martha|kate|victoria|allison|ava|susan|zoe|zira|hazel|amelie|catherine|nicky|joana|luciana|sonia|libby|aria|jenny|michelle)/i;
+const MALE=/(\bmale\b|daniel|arthur|oliver|alex|fred|aaron|david|george|mark|rishi|gordon|\blee\b|thomas|reed|guy|ryan|william|brian|eric|tom\b)/i;
+let VOICES=[];
+function loadVoices(){ try{ const all=speechSynthesis.getVoices()||[]; const en=all.filter(v=>/^en\b/i.test(v.lang)); VOICES = en.length?en:all; }catch(e){ VOICES=[]; } }
+if(VOICE_OK){ loadVoices(); try{ speechSynthesis.addEventListener("voiceschanged", loadVoices); }catch(e){} }
+function voiceFor(id){
+  const sex = SEX[id]||"f";
+  const want = sex==="f"?FEMALE:MALE, other = sex==="f"?MALE:FEMALE;
+  let cands = VOICES.filter(v=>want.test(v.name));
+  if(!cands.length) cands = VOICES.filter(v=>!other.test(v.name));
+  if(!cands.length) cands = VOICES;
+  if(!cands.length) return null;
+  const same = STATIONS.filter(s=>(SEX[s.id]||"f")===sex).map(s=>s.id);
+  const idx = Math.max(0, same.indexOf(id));
+  return cands[idx % cands.length];
+}
+function stopSpeak(){ if(VOICE_OK) speechSynthesis.cancel(); }
+function speak(text, id){
+  if(!VOICE_OK||!text) return;
+  try{
+    speechSynthesis.cancel();
+    const v = id ? voiceFor(id) : null;
+    const sex = id ? (SEX[id]||"f") : null;
+    const h = id ? [...id].reduce((a,c)=>a+c.charCodeAt(0),0) : 0;
+    const bias = sex==="f" ? 0.10 : sex==="m" ? -0.12 : 0;         // female higher, male lower
+    const pitch = Math.max(0.6, Math.min(1.5, 1 + bias + ((h%5)-2)/40));  // small per-person variation
+    const rate = 0.97 + (h%4)/60;
+    const chunks=[];
+    stripMd(text).split(/(?:\. |\n)/).forEach(s=>{ s=s.trim(); if(s) chunks.push(s.length>220?s.slice(0,220):s); });
+    chunks.forEach(c=>{ const u=new SpeechSynthesisUtterance(c); if(v){ u.voice=v; u.lang=v.lang; } u.pitch=pitch; u.rate=rate; speechSynthesis.speak(u); });
+  }catch(e){}
+}
+function updateVoiceBtn(){ const b=$("#voiceBtn"); b.textContent=voiceOn?"🔊 Voice":"🔇 Voice"; b.classList.toggle("on",voiceOn); }
+
+/* ---------- speak-to-type (best effort) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, recording=false;
+function setupMic(){
+  if(!SR) return;
+  $("#micBtn").classList.add("show");
+  $("#micBtn").onclick = ()=>{
+    if(streaming) return;
+    if(recording){ try{ rec.stop(); }catch(e){} return; }
+    try{
+      rec = new SR(); rec.lang="en-GB"; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = e=>{ const t=e.results[0][0].transcript; $("#input").value=t; autosize(); };
+      rec.onerror = e=>{ toast(e.error==="not-allowed" ? "Microphone blocked. Tip: use your keyboard's mic button instead." : "Voice input isn't available here — use your keyboard's mic button."); };
+      rec.onend = ()=>{ recording=false; $("#micBtn").classList.remove("rec"); const v=$("#input").value.trim(); if(v) send(); };
+      rec.start(); recording=true; $("#micBtn").classList.add("rec");
+    }catch(e){ toast("Voice input isn't available here — use your keyboard's mic button."); }
+  };
+}
+
+/* ---------- composer ---------- */
+const input=$("#input");
+function autosize(){ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,160)+"px"; }
+input.addEventListener("input", autosize);
+input.addEventListener("keydown", e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } });
+$("#send").onclick=send;
+$("#rcBar").onclick=rootCause;
+
+/* ---------- settings / theme / reset / voice ---------- */
+const backdrop=$("#backdrop");
+function openSettings(){ $("#keyInput").value=apiKey; $("#modelSel").value=model; backdrop.classList.add("show"); $("#keyInput").focus(); }
+$("#setBtn").onclick=openSettings;
+$("#setCancel").onclick=()=>backdrop.classList.remove("show");
+backdrop.onclick=e=>{ if(e.target===backdrop) backdrop.classList.remove("show"); };
+$("#setSave").onclick=()=>{
+  apiKey=$("#keyInput").value.trim(); model=$("#modelSel").value;
+  if(apiKey) localStorage.setItem(LS.key,apiKey); else localStorage.removeItem(LS.key);
+  localStorage.setItem(LS.model,model); backdrop.classList.remove("show"); input.focus();
+};
+$("#resetBtn").onclick=()=>{ if(confirm("Clear every conversation and start the walk fresh?")){ convos={}; saveConvos(); stopSpeak(); renderStrip(); renderWelcome(); } };
+
+const themeBtn=$("#themeBtn");
+let theme=localStorage.getItem(LS.theme)||"auto";
+function applyTheme(){ if(theme==="auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme",theme); }
+themeBtn.onclick=()=>{ theme=theme==="auto"?"light":theme==="light"?"dark":"auto"; localStorage.setItem(LS.theme,theme); applyTheme(); };
+applyTheme();
+
+if(VOICE_OK){ $("#voiceBtn").style.display=""; updateVoiceBtn();
+  $("#voiceBtn").onclick=()=>{ voiceOn=!voiceOn; localStorage.setItem(LS.voice,voiceOn?"1":"0"); updateVoiceBtn(); if(!voiceOn) stopSpeak(); else toast("The people will now read their answers aloud."); };
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+
+window.addEventListener("pagehide", stopSpeak);
+
+/* ---------- boot ---------- */
+renderStrip(); renderWelcome(); autosize(); setupMic();
+if(!apiKey) setTimeout(openSettings, 400);
+</script>
+</body>
+</html>
