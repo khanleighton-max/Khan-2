@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Walk the Line — talk to the floor, find the root cause</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Walk the Line">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#24507c">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<style>
+  :root{
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --bg:#e9ebe8; --panel:#fff; --panel-2:#f5f6f4; --ink:#1a2026; --ink-soft:#3c454f;
+    --muted:#6c7681; --line:#d9ddd8; --line-strong:#c3c8c2; --accent:#24507c; --accent-bg:#e6edf5;
+    --good:#2f7a4f; --good-bg:#e6f1ea; --warn:#a9701a; --warn-bg:#f5ecd9; --crit:#b23b34; --crit-bg:#f6e2e0;
+    --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px rgba(20,30,40,.06);
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --bg:#12161a; --panel:#1a2026; --panel-2:#212a31; --ink:#e9ece9; --ink-soft:#bcc4cb; --muted:#869099;
+    --line:#2b343c; --line-strong:#3a444d; --accent:#78aadd; --accent-bg:#1c2a39;
+    --good:#62b98a; --good-bg:#16271e; --warn:#d19a44; --warn-bg:#2a2413; --crit:#e2726a; --crit-bg:#2c1a18;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="light"]{--bg:#e9ebe8;--panel:#fff;--panel-2:#f5f6f4;--ink:#1a2026;--ink-soft:#3c454f;--muted:#6c7681;--line:#d9ddd8;--line-strong:#c3c8c2;--accent:#24507c;--accent-bg:#e6edf5;--good:#2f7a4f;--good-bg:#e6f1ea;--warn:#a9701a;--warn-bg:#f5ecd9;--crit:#b23b34;--crit-bg:#f6e2e0;--shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px rgba(20,30,40,.06);}
+  :root[data-theme="dark"]{--bg:#12161a;--panel:#1a2026;--panel-2:#212a31;--ink:#e9ece9;--ink-soft:#bcc4cb;--muted:#869099;--line:#2b343c;--line-strong:#3a444d;--accent:#78aadd;--accent-bg:#1c2a39;--good:#62b98a;--good-bg:#16271e;--warn:#d19a44;--warn-bg:#2a2413;--crit:#e2726a;--crit-bg:#2c1a18;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box;} html,body{height:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+
+  header.top{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;background:var(--panel);border-bottom:1px solid var(--line);}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .mark{width:38px;height:38px;flex-shrink:0;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:-.5px;}
+  @media (prefers-color-scheme:dark){.mark{color:#0d1216;}} :root[data-theme="dark"] .mark{color:#0d1216;} :root[data-theme="light"] .mark{color:#fff;}
+  h1{font-size:1rem;margin:0;white-space:nowrap;} .tagline{color:var(--muted);font-size:.75rem;margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .top-actions{display:flex;gap:6px;flex-shrink:0;}
+  .ic{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:.78rem;cursor:pointer;font-family:var(--sans);white-space:nowrap;}
+  .ic:hover{border-color:var(--line-strong);}
+  .ic.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+
+  /* station strip */
+  .strip-wrap{flex-shrink:0;background:var(--panel);border-bottom:1px solid var(--line);}
+  .strip-hint{max-width:900px;margin:0 auto;padding:8px 16px 0;font-size:.72rem;color:var(--muted);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
+  .section-tabs{display:flex;gap:6px;max-width:900px;margin:0 auto;padding:10px 16px 2px;}
+  .sec-tab{flex:0 0 auto;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-soft);border-radius:999px;padding:7px 15px;font-family:var(--sans);font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .sec-tab:hover{border-color:var(--line-strong);}
+  .sec-tab.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  @media (prefers-color-scheme:dark){.sec-tab.on{color:#0d1216;}} :root[data-theme="dark"] .sec-tab.on{color:#0d1216;} :root[data-theme="light"] .sec-tab.on{color:#fff;}
+  .strip{display:flex;gap:0;overflow-x:auto;padding:8px 16px 12px;align-items:stretch;-webkit-overflow-scrolling:touch;}
+  .st{flex:0 0 auto;display:flex;align-items:center;}
+  .st-card{width:112px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:10px 8px 9px;cursor:pointer;text-align:center;position:relative;transition:border-color .15s,transform .1s;}
+  .st-card:hover{border-color:var(--line-strong);} .st-card:active{transform:scale(.97);}
+  .st-card.active{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 3px var(--accent-bg);}
+  .st-card.visited{border-color:var(--good);}
+  .st-face{font-size:30px;line-height:1;margin-bottom:4px;}
+  .st-role{font-size:.78rem;font-weight:600;line-height:1.2;}
+  .st-who{font-size:.66rem;color:var(--muted);margin-top:2px;line-height:1.2;}
+  .st-card .badge{position:absolute;top:6px;right:6px;width:19px;height:19px;border-radius:50%;background:var(--good);color:#fff;font-size:12px;line-height:1;display:none;align-items:center;justify-content:center;font-weight:700;}
+  .st-card.visited .badge{display:flex;}
+  .st-arrow{color:var(--line-strong);font-size:1.1rem;padding:0 3px;align-self:center;flex:0 0 auto;}
+  .st-card.office{border-style:dashed;border-color:var(--line-strong);background:var(--panel);}
+  .st-card.office.active{border-color:var(--accent);background:var(--accent-bg);}
+  .st-sep{flex:0 0 auto;align-self:center;height:70px;margin:0 8px;border-left:2px dashed var(--line-strong);display:flex;align-items:center;}
+  .st-sep b{font-family:var(--mono);font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);padding-left:5px;max-height:66px;}
+
+  /* main */
+  .main{flex:1;overflow-y:auto;}
+  .inner{max-width:780px;margin:0 auto;padding:22px 18px 8px;}
+  .welcome .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .welcome h2{font-size:1.4rem;margin:0 0 10px;letter-spacing:-.01em;text-wrap:balance;}
+  .welcome p{color:var(--ink-soft);font-size:.95rem;max-width:60ch;margin:0 0 12px;}
+  .welcome .steps{display:flex;flex-direction:column;gap:8px;margin:14px 0 0;}
+  .welcome .steps div{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;color:var(--ink-soft);}
+  .welcome .steps b{font-family:var(--mono);color:var(--accent);flex-shrink:0;}
+
+  .chat-head{display:flex;align-items:center;gap:12px;padding:4px 0 14px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .head-face{font-size:40px;line-height:1;flex-shrink:0;}
+  .chat-head h2{margin:0;font-size:1.05rem;}
+  .chat-head .sub{font-size:.8rem;color:var(--muted);}
+
+  /* station visual — a photo you supply, or the built-in blueprint drawing */
+  .visual{width:100%;max-width:520px;margin:2px auto 14px;}
+  .visual .scene{margin:0;max-width:100%;}
+  .visual-fig{position:relative;margin:0;}
+  .visual-fig img.photo{width:100%;display:block;border:1px solid var(--line);border-radius:12px;aspect-ratio:420/168;object-fit:cover;background:var(--panel-2);}
+  .visual-cap{position:absolute;top:0;left:0;right:0;padding:9px 13px;color:#fff;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.08em;border-radius:12px 12px 0 0;background:linear-gradient(180deg,rgba(13,26,46,.86),rgba(13,26,46,.5) 60%,rgba(13,26,46,0));}
+  .scene{width:100%;max-width:520px;height:auto;display:block;margin:2px auto 14px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));}
+  .scene .k{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .scene .t{fill:none;stroke:var(--accent);stroke-width:1;opacity:.42;stroke-linecap:round;stroke-linejoin:round;}
+  .scene .f{fill:var(--accent-bg);stroke:var(--accent);stroke-width:1.5;stroke-linejoin:round;}
+  .scene .pf{fill:var(--accent);}
+  .scene .sp{stroke:var(--warn);stroke-width:2;stroke-linecap:round;}
+  .scene .cap{fill:var(--muted);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;}
+
+  .msg{display:flex;gap:11px;margin-bottom:18px;}
+  .avatar{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:20px;line-height:1;}
+  .msg.user .avatar{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line);font-family:var(--mono);font-size:.62rem;font-weight:700;}
+  .msg.assistant .avatar{background:var(--accent-bg);overflow:hidden;}
+  .avatar img.avphoto{width:100%;height:100%;object-fit:cover;display:block;}
+  .bubble{flex:1;min-width:0;padding-top:5px;}
+  .who{font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:3px;}
+  .md{font-size:.94rem;color:var(--ink);} .md>*:first-child{margin-top:0;} .md>*:last-child{margin-bottom:0;}
+  .md p{margin:0 0 10px;} .md h2{font-size:1.02rem;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+  .md h3{font-size:.9rem;margin:14px 0 6px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;}
+  .md ul,.md ol{margin:0 0 10px;padding-left:22px;} .md li{margin:4px 0;} .md strong{color:var(--ink);font-weight:650;} .md em{color:var(--ink-soft);}
+  .md code{font-family:var(--mono);font-size:.85em;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+  .md blockquote{margin:0 0 10px;padding:8px 14px;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0;color:var(--ink-soft);}
+  .cursor{display:inline-block;width:7px;height:15px;background:var(--accent);border-radius:1px;vertical-align:-2px;animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .suggest{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 6px;}
+  .suggest button{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:7px 12px;font-size:.8rem;cursor:pointer;color:var(--ink-soft);}
+  .suggest button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+  .err-banner{background:var(--crit-bg);border:1px solid var(--crit);border-radius:9px;padding:10px 14px;font-size:.84rem;color:var(--ink-soft);margin-bottom:12px;} .err-banner b{color:var(--crit);}
+
+  /* composer */
+  .composer-wrap{flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 16px calc(11px + env(safe-area-inset-bottom));}
+  .rc-bar{display:none;width:100%;max-width:780px;margin:0 auto 9px;background:var(--accent);color:#fff;border:none;border-radius:11px;padding:12px;font-family:var(--sans);font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:var(--shadow);}
+  @media (prefers-color-scheme:dark){.rc-bar{color:#0d1216;}} :root[data-theme="dark"] .rc-bar{color:#0d1216;} :root[data-theme="light"] .rc-bar{color:#fff;}
+  .rc-bar.show{display:block;}
+  .composer{max-width:780px;margin:0 auto;display:flex;gap:9px;align-items:flex-end;}
+  .micbtn{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;width:44px;height:44px;flex-shrink:0;cursor:pointer;font-size:1.15rem;display:none;place-items:center;}
+  .micbtn.show{display:grid;} .micbtn:hover{border-color:var(--line-strong);}
+  .micbtn.rec{border-color:var(--crit);background:var(--crit-bg);animation:pulse 1s infinite;}
+  @keyframes pulse{50%{opacity:.5;}}
+  textarea#input{flex:1;resize:none;font-family:var(--sans);font-size:.95rem;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;max-height:160px;outline:none;line-height:1.5;}
+  textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+  #send{background:var(--accent);color:#fff;border:none;border-radius:11px;width:44px;height:44px;flex-shrink:0;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;}
+  @media (prefers-color-scheme:dark){#send{color:#0d1216;}} :root[data-theme="dark"] #send{color:#0d1216;} :root[data-theme="light"] #send{color:#fff;}
+  #send:disabled{opacity:.4;cursor:not-allowed;}
+  .composer-note{max-width:780px;margin:6px auto 0;font-size:.7rem;color:var(--muted);text-align:center;}
+
+  /* modal + toast */
+  .backdrop{position:fixed;inset:0;background:rgba(10,14,18,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .backdrop.show{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);max-width:520px;width:100%;padding:24px;max-height:90vh;overflow-y:auto;}
+  .modal h2{margin:0 0 4px;font-size:1.15rem;} .modal p{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px;}
+  .modal label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-soft);margin:12px 0 5px;}
+  .modal input,.modal select{width:100%;font-family:var(--mono);font-size:.9rem;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;outline:none;}
+  .modal select{font-family:var(--sans);}
+  .modal input:focus,.modal select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+  .modal .hint{font-size:.74rem;color:var(--muted);margin-top:5px;} .modal .hint a{color:var(--accent);}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .btn{font-family:var(--sans);font-size:.88rem;font-weight:600;cursor:pointer;border-radius:9px;padding:10px 18px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  @media (prefers-color-scheme:dark){.btn.primary{color:#0d1216;}} :root[data-theme="dark"] .btn.primary{color:#0d1216;} :root[data-theme="light"] .btn.primary{color:#fff;}
+  .callout{background:var(--warn-bg);border:1px solid var(--warn);border-radius:9px;padding:10px 13px;font-size:.8rem;color:var(--ink-soft);margin-top:12px;} .callout b{color:var(--ink);}
+  .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:.85rem;box-shadow:var(--shadow);opacity:0;transition:opacity .25s;pointer-events:none;z-index:60;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="mark">FD</div>
+      <div style="min-width:0"><h1>Walk the Line</h1><p class="tagline">Talk to the floor · find the root cause</p></div>
+    </div>
+    <div class="top-actions">
+      <button class="ic" id="voiceBtn" type="button" title="Have the people read their answers aloud" style="display:none">🔇 Voice</button>
+      <button class="ic" id="setBtn" type="button">⚙ Setup</button>
+      <button class="ic" id="resetBtn" type="button" title="Clear all conversations">↺</button>
+      <button class="ic" id="themeBtn" type="button">◐</button>
+    </div>
+  </header>
+
+  <div class="strip-wrap">
+    <div class="section-tabs" id="sectionTabs"></div>
+    <div class="strip-hint">Tap a person › then walk up to the functions behind it</div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="main"><div class="inner" id="inner"></div></div>
+
+  <div class="composer-wrap">
+    <button class="rc-bar" id="rcBar" type="button">◆ Find the root cause</button>
+    <div class="composer">
+      <button class="micbtn" id="micBtn" type="button" title="Speak your question">🎤</button>
+      <textarea id="input" rows="1" placeholder="Pick a person above, then ask them something…"></textarea>
+      <button id="send" type="button">↑</button>
+    </div>
+    <p class="composer-note">Runs in your browser with your own Anthropic key · the people are AI stand-ins for each role, to help you think and rehearse the walk</p>
+  </div>
+
+  <div class="backdrop" id="backdrop">
+    <div class="modal">
+      <h2>Set up the tool</h2>
+      <p>This talks to Claude from your browser, so it needs your own Anthropic API key. It stays on this device and is only ever sent to Anthropic.</p>
+      <label for="keyInput">Anthropic API key</label>
+      <input id="keyInput" type="password" placeholder="sk-ant-…" spellcheck="false" autocomplete="off">
+      <div class="hint">Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Set a low spend limit while you try it.</div>
+      <label for="modelSel">Model</label>
+      <select id="modelSel">
+        <option value="claude-opus-4-8">Claude Opus 4.8 — sharpest (higher cost)</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — strong &amp; cheaper (good default)</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest &amp; cheapest</option>
+      </select>
+      <div class="hint">A walk down the line is many short messages, so Sonnet keeps cost sensible.</div>
+
+      <label for="elevenInput">Natural voices — ElevenLabs key <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="elevenInput" type="password" placeholder="paste to switch on human voices" spellcheck="false" autocomplete="off">
+      <div class="hint">Optional but recommended. Free account at <a href="https://elevenlabs.io" target="_blank" rel="noopener">elevenlabs.io</a> → your profile → API key. With it, each person speaks in a natural human voice on any device. Without it, the app uses your device's built-in voice.</div>
+
+      <div class="callout"><b>Never paste your keys into a chat or share this file with a key saved in it.</b> A browser page can't hide a key — treat it like cash and keep a spend cap on it.</div>
+      <div class="modal-actions">
+        <button class="btn" id="setCancel" type="button">Cancel</button>
+        <button class="btn primary" id="setSave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const LS = { key:"khan-mat-anthropic-key", model:"khan-mat-model", theme:"khan-mat-theme", convos:"khan-mat-linewalk", voice:"khan-mat-voice", eleven:"khan-mat-eleven", section:"khan-mat-section" };
+const SECTIONS = [ { id:"structural", label:"Structural · Building 20" }, { id:"pipe", label:"Pipe Shop" } ];
+
+/* ---------- the line ---------- */
+const SHARED_STRUCT = `You are in the STRUCTURAL steel shop (Building 20), which builds Hunter-class frigate units from raw plate: plate cutting, profile & T-bar cutting, profile bending, dressing in a central hall, robot plate welding into panels, stiffener mounting on a welding portal (SMWP), bulkhead fabrication, then a five-station unit line running on a fixed pulse (deck plate first, then bulkheads stood up and welded in). High-mix, one-of-a-kind — nothing is made twice. What's really going on right now (weave it in naturally as the conversation earns it, never recite it as a list): weld rejects and rework are running higher than people expect — first-time pass on 5G welds is only about 50 to 60 per cent — and a real and unresolved possibility is that the WELD ACCEPTANCE STANDARD being applied is tighter than this structure actually needs, so joints that are arguably fit for purpose get knocked back and re-worked (over-processing); the other real possibility is a genuine process-capability gap, which may itself trace back to Trade Training passing welders through too fast. It is genuinely unclear whether that standard was set by BAE internally (possibly gold-plated) or is what the classification society (Lloyd's) actually require. Treat this as a hypothesis to test on the floor and in the reject data, not a settled fact — nobody has confirmed it, and it should be verified, not assumed. Work is released to the floor by the date it is CUT, not when it's needed, so material is prepared far too early; the central hall and laydown are jammed and space, not machine capacity, is what actually stops work. Stiffener mounting has taken on several new starters still learning the job. And everyone is under pressure to keep the unit line moving on its pulse. Behind the floor sit the enabling functions that decide how work arrives: PLANNING releases work to the cut date against the master schedule; NESTING (production engineering) nests the parts onto plate for best yield and writes the cut programmes; MANUFACTURING ENGINEERING sets the build strategy, methods, sequence and tooling; DESIGN works in the 3D product model (built on the overseas parent design); SUPPLY CHAIN / PROCUREMENT sources the material (no known supplier change); QUALITY / DIMENSIONAL CONTROL owns inspection, weld acceptance, tolerances and the non-conformance data; and TRADE TRAINING brings welders and trades up to a standard on the qualification matrix before they reach the floor (plate welding for structural), and may be under recruitment and trade pressure to pass people faster than they're truly ready. This shop is less mature in continuous improvement than the pipe shop. When a question is really about why work is released, sequenced, supplied, accepted or resourced the way it is, point the improvement lead toward those functions.`;
+
+const SHARED_PIPE = `You are in the PIPE SHOP — a separate shop from the structural steel line (Building 20), with its own flow and, importantly, a MORE MATURE continuous-improvement culture. Pipe arrives as 6-metre lengths held on a pipe course, then flows: cutting (with strict material separation — carbon steel kept apart from copper-nickel and stainless to avoid cross-contamination), bending on benders that need a die change for each diameter and material, flaring, heat treatment of the bent pipe, flushing to remove bend lube, grinding, then fit-up where the pipe is tacked in position and flanges, unions, bosses and penetration sleeves are tacked and aligned (a leading hand checks alignment), then it's fully welded in, and finally pressure-tested or NDT-tested if required. The shop runs to real flow rules: work is level-loaded (heijunka) and there are standard WIP limits on how much of each type of work is in progress, broken down by diameter, material type and complexity — so it is deliberately not chaotic, and people are proud of that. What's genuinely worth probing (as a hypothesis, not a fact): first-time pass on 5G pipe welds is only about 50 to 60 per cent; one real possibility is that TRADE TRAINING, under recruitment and trade pressure, is passing pipe welders through the qualification matrix faster than they're truly ready, so under-baked capability shows up as rework; another is fit-up and access; another is the acceptance standard being tighter than the job needs. On pipe/5G work, quality is usually made or lost at fit-up and access as much as at the welder. Because this shop already level-loads and limits WIP, do NOT think about it like the less-mature structural line — the subtler constraints live in die-change changeover time (SMED), the batching forced by material separation, heat-treat and test capacity, and the training pass-through.`;
+
+/* Each station's `img` lists the photo file names it will accept from the
+   line-images folder (Khan's real station names first), so uploads map with
+   no renaming. */
+const STATIONS = [
+  { id:"cut",     emoji:"👷‍♂️", role:"Plate cutting",         who:"Dave · plate cutting", img:["Cutting","cut"],
+    focus:`You run the CNC plate cutting — the gate to the whole line. You're measured on tonnes cut per week, so you keep cutting; where it goes afterwards isn't really your problem. You release to the cut-programme dates, so plate goes out by the date it's cut, not when anyone downstream needs it. From here you don't really see the quality issues that show up further down the line.` },
+  { id:"profile", emoji:"👩‍🏭", role:"Profile & T-bar cutting", who:"Priya · profile cutting", img:["Profile & T","Profile and T","Profile T","profile"],
+    focus:`You cut structural profiles, T-bars and bulb bars. Like plate, they're cut to the programme date and pushed straight on, so a mountain of profiles and small parts builds up ahead of need. Your other headache is small parts going missing — completion gets signed off by the batch, but parts are consumed one at a time, so the paperwork says done while people can't find the actual bits. A lot of your day is chasing.` },
+  { id:"bend",    emoji:"🧑‍🏭", role:"Profile bending",        who:"Tom · bending press", img:["Profile BEnding","Profile Bending","bend"],
+    focus:`You run the profile bending press, curving frames and profiles to shape. There's one press, so people call you a bottleneck — but honestly you often bend whatever's in front of you to keep the press busy, not what's needed next, which just adds to the pile downstream. When the right profile isn't ready you wait; when the wrong ones are stacked up you bend ahead. You feel the pressure but you're not the real cap.` },
+  { id:"dress",   emoji:"👨‍🔧", role:"Dressing",              who:"Ben · dressing operator", img:["Dressing","dress"],
+    focus:`You dress steel in the central hall — grinding off scale, cleaning up edges and cut lines on profiles, T-bars and small parts. The problem is everything cutting produces gets pushed straight in here, so you dress it because it's sitting in front of you, not because anyone downstream has asked for it. You're flat out, but a lot of what you finish just sits. It waits so long it flashes up with surface rust, and then you dress it a second or third time — you've re-done some pieces more than twice. The hall's so packed with steel you can barely move through it safely, and when there's no room in here, work upstream has to stop. It's space, not machines, that caps this place.` },
+  { id:"robot",   emoji:"👨‍🏭", role:"Plate robot welder",     who:"Sam · robot weld cell", img:["Plate Robot Welder","Robot Welder","robot"],
+    focus:`You run the robot cell that welds plates into panels and seam-welds them. You're getting more weld rejects than feels right — and honestly a lot of what gets knocked back looks cosmetic, or is held to a standard that seems tighter than this structure actually needs. So you're grinding out and re-welding joints that were arguably fit for purpose, which is a lot of wasted time. You're not sure whether that acceptance standard is one BAE has set or what the class society (Lloyd's) actually require — but it's costing you.` },
+  { id:"smwp",    emoji:"👷", role:"Stiffener mounting (SMWP)", who:"Jack · portal lead", img:["SMWP","Stiffener Mounting Welder Portal","smwp","stiff"],
+    focus:`You mount stiffeners on the welding portal. You've several new starters still building their skills. Under pulse-time pressure they rush, mistakes creep in, and rework bounces back to you. You blame the panels you're handed (not flat) and the time pressure. You're a pinch point and you feel it.` },
+  { id:"bulkhead",emoji:"👩‍🔧", role:"Bulkhead fab",           who:"Maria · bulkhead assembly", img:["Bulkhead Fab","Bulkhead","bulkhead","sub"],
+    focus:`You build bulkheads from stiffened panels and dress them ready for the unit line. You wait a lot on stiffener mounting, and quality problems from upstream land on you to fix. Your assembly area is tight and cluttered too. When things arrive late you're squeezed hard to keep the unit line fed.` },
+  { id:"deck",    emoji:"👩‍💼", role:"Unit line — deck (WS1)",  who:"Nadia · unit line WS1", img:["Unit Line Deck Plate 1","Unit Line Deck Plate","Deck Plate","deck"],
+    focus:`You run the first unit-line station — the deck plate goes down and you fit carlings, transverse stiffeners and other structural members to start the unit. Trouble is units start here not quite ready: missing parts, bits needing rework from upstream. You're setting the beat for the whole unit line, so anything missing at the start ripples all the way down.` },
+  { id:"unit",    emoji:"👩‍🏭", role:"Unit line — WS 2–5",     who:"Kate · unit line supervisor", img:["Unit Line","unit"],
+    focus:`You run stations two to five of the unit line on a fixed pulse — units moving station to station on the beat, deck structure built up and bulkheads stood up and welded in, until it starts to resemble a compartment. Units reach you not quite ready: missing parts, bits needing rework. You're under real pressure to hold the beat, and you feel everything wrong upstream but can't see the cause from where you stand.` },
+
+  { id:"plan",    emoji:"👩‍💼", role:"Planning",               who:"Rachel · production planning", tier:"office", img:["Planning","plan"],
+    focus:`You plan and release work to the floor against the master schedule. You release each part by the date it needs to be CUT, because your job is to keep the build to programme and keep the expensive machines and trades loaded — a gap in the schedule or an idle machine is what you get asked about. You know material hits the floor early and piles up, but holding it back feels like risking the programme, so the safe move is to release it. You work off the cut programmes engineering produces and the sequence the design model sets. Honestly, change the release rule — release to when it's needed, not to the cut date — and you'd change the whole flow; but nobody's really owned that decision.` },
+  { id:"eng",     emoji:"👨‍💻", role:"Nesting",                 who:"Sanjay · nesting & cut programmes", tier:"office", img:["Engineering","Nesting","eng"],
+    focus:`You take the design model and nest the parts onto plate — laying out how parts are grouped for cutting and producing the cut programmes the floor runs to. You nest for the best yield out of every plate, because plate is costly and scrap gets measured, so you pack the parts in tight. The trouble is a good nest groups parts by what fits the plate, not by what the floor needs next or which unit they belong to — so parts for different jobs come off the same plate together and get scattered. You build the nests from the 3D model design hands you; when that model changes late, your nests and programmes have to be reworked.` },
+  { id:"design",  emoji:"👩‍💻", role:"Design",                 who:"Elena · product model", tier:"office", img:["Design","design"],
+    focus:`You work in the 3D product model. For Hunter it's built on the overseas parent design, so a lot of the time you're adapting a model authored elsewhere to how we actually build. The model defines the structure, how the ship breaks into blocks and units, and the sequence everything downstream follows. When the model is mature and stable, the whole line flows; when it's still changing or a detail isn't nailed down, that uncertainty ripples all the way to the steel as late changes and rework. You're the source of the information the line runs on, even though you're the furthest from the plate.` },
+  { id:"mfg",     emoji:"👩‍🔧", role:"Mfg engineering",         who:"Leah · manufacturing engineering", tier:"office", img:["Manufacturing Engineering","Mfg Engineering","ME","mfg"],
+    focus:`You turn the design into how we actually build it — the build strategy, the assembly sequence, work instructions, tooling and fixtures, and how the ship is broken into blocks and units for the line. Your methods assume clean, flat material and parts arriving in the right order; when plate varies or parts turn up scattered from the nests, the sequence you designed doesn't run as intended and the floor has to improvise. You sit between design and the floor, so you're well placed to change how work is sequenced and pulled — but the release rule itself really lives with planning.` },
+  { id:"supply",  emoji:"🧑‍💼", role:"Supply chain",           who:"Grace · supply chain & procurement", tier:"office", img:["Supply Chain","Procurement","Supply","supply"],
+    focus:`You source and bring in material to the programme — steel plate, profiles, bulb bars, consumables and bought-in items — measured on cost and on not holding the build up for want of material. As far as you're aware the plate supplier hasn't changed and the material meets its spec, so when you hear about weld rejects you don't think it's an incoming-material problem — it points more at the acceptance standard being applied than at the steel. Long-lead items and delivery windows do push people to order and cut early so material doesn't sit as a shortage risk, though.` },
+  { id:"quality", emoji:"👨‍🔬", role:"Quality & dim. control",  who:"Omar · quality & dimensional control", tier:"office", img:["Quality","Dimensional Control","QA","quality"],
+    focus:`You own quality and dimensional control — inspection, weld acceptance, tolerances, non-conformances and the metrology checks that make sure units will actually fit together. Weld pass rates are a live worry: first-time pass on 5G welds is only around 50 to 60 per cent, which is low, so there's a mountain of cut-out and re-weld. A steady figure like that looks to you like a common cause — something built into the system — not a handful of bad welders. You've started to wonder whether the acceptance criteria being applied are tighter than the vessel structurally needs (gold-plated internally rather than what the class rules — Lloyd's — actually demand), OR whether it's a genuine process-capability gap. You've got the reject data to settle it: sort the failures into the ones that truly affect fitness for service versus the ones failing a tighter-than-needed criterion — that split, checked against the real class requirement, says whether it's a standard problem or a capability problem. You honestly don't yet know which, and you'd want it verified, not assumed.` },
+
+  { id:"train",   emoji:"👨‍🏫", role:"Trade training",          who:"Neil · trade training", tier:"office", img:["Trade Training","Training","train"],
+    focus:`You run trade training for the structural welders — bringing them up the qualification matrix (plate welding, positions) before they go to the floor. Here's the honest bit: you're under real recruitment and trade pressure to qualify people and get them out, and you worry you sometimes pass them a little faster than they're truly ready. If weld rework is high, part of it might be capability you signed off too early — it'd be worth checking whether the newest welders account for more of the rejects than the experienced hands.` },
+
+  { id:"pstore",  emoji:"🧑‍🏭", role:"Pipe course / store",     who:"Ivan · pipe store", section:"pipe", img:["Pipe Store","Pipe Course","pstore"],
+    focus:`You run the pipe course — 6-metre lengths racked and ready. Everything is kept strictly separated by material: carbon steel apart from copper-nickel and stainless, so nothing cross-contaminates. We pull to the level-loaded plan rather than in a rush, and the WIP limits upstream keep it sane, so I rarely have a mad pile-up. Now and then a diameter or material we're light on holds a job, but that's visible early.` },
+  { id:"pcut",    emoji:"👷‍♂️", role:"Pipe cutting",            who:"Wes · pipe cutting", section:"pipe", img:["Pipe Cutting","Pipe Cut","pcut"],
+    focus:`I cut the 6-metre lengths to size and prep the ends. The big rule here is material separation — carbon, copper-nickel and stainless each have their own cutting and handling so we never contaminate. I cut to the level-loaded schedule, so it's steady, not frantic. Prep quality — bevel, cleanliness — matters for the weld later, and when we're pushed it's the first thing to slip.` },
+  { id:"pbend",   emoji:"👩‍🏭", role:"Pipe bending",            who:"Nina · pipe bending", section:"pipe", img:["Pipe Bending","Pipe Bend","pbend"],
+    focus:`I bend pipe on the benders. Each diameter and each material needs its own die, so a change of job means a die change — a changeover — and that's my real time-cost. We deliberately batch by diameter and material (heijunka), grouping like-with-like so we're not swapping dies all day. If the schedule mixes it up, my changeovers balloon and everything behind me waits. Get the sequencing right and I flow.` },
+  { id:"pflare",  emoji:"👨‍🏭", role:"Pipe flaring",            who:"Sione · pipe flaring", section:"pipe", img:["Pipe Flaring","Flaring","pflare"],
+    focus:`I flare pipe ends where the design calls for it. It's a quick, standard operation, and the shop's flow rules mean work turns up in a steady trickle, not a flood. Every so often a flare needs redoing if the prep or the tube wall isn't right, but I'm not the shop's constraint.` },
+  { id:"pht",     emoji:"👩‍🔬", role:"Heat treatment",          who:"Dana · heat treatment", section:"pipe", img:["Heat Treatment","Heat Treat","pht"],
+    focus:`I run heat treatment on the bent pipe — stress-relieving it after bending. It's a batch process with a fixed cycle time, so I'm a natural pacing point: pipe waits to fill a load, then waits for the cycle. The level-loading manages it, but if bending sends me an uneven mix, my oven either sits half-empty or backs up. Test and I are the two spots where time is fixed, not flexible.` },
+  { id:"pflush",  emoji:"🧑‍🔧", role:"Pipe flushing",           who:"Raj · pipe flushing", section:"pipe", img:["Pipe Flushing","Flushing","pflush"],
+    focus:`I flush the pipe to get the bending lubricant out — a clean bore before it goes on. It's standard work and rarely the hold-up, but if a batch isn't flushed properly the lube causes cleanliness and weld problems downstream, so we don't cut it short. Cleanliness is a quiet quality lever people forget about.` },
+  { id:"pgrind",  emoji:"👩‍🏭", role:"Pipe grinding",           who:"Bianca · pipe grinding", section:"pipe", img:["Pipe Grinding","Grinding","pgrind"],
+    focus:`I grind and dress the pipe — weld preps, cleaning up, getting surfaces right before fit-up and welding. Good grinding and prep is half of a good weld. When welding is under pressure and pulling work forward, prep gets rushed, and that shows up as weld defects that get blamed on the welder.` },
+  { id:"pfit",    emoji:"👩‍🏭", role:"Pipe fit-up & tack",      who:"Aisha · pipe fit-up", section:"pipe", img:["Pipe Fit-up","Pipe Fitup","Spool Fit-up","pfit"],
+    focus:`I fit pipe up and tack it in position — and tack the flanges, unions, bosses and penetration sleeves on, aligned right. The leading hand checks my alignment before it goes to full weld. Fit-up is where a 5G weld is won or lost: root gap, alignment, cleanliness. When access is bad or we're rushed, fit-up slips and the welder wears the failure. A lot of weld rejects are really fit-up and access problems with a welder's name on them.` },
+  { id:"pweld",   emoji:"👨‍🏭", role:"Pipe welding (5G)",       who:"Marco · pipe welder", section:"pipe", img:["Pipe Welding","5G Welding","pweld"],
+    focus:`I weld pipe, including 5G — fixed position, all the way round, one of the hardest. First-time pass is only about 50 to 60 per cent and it wears on you, because it feels like it's on me. But a lot is the fit-up and access I'm handed, or procedure and consumables — and some rejects are against a standard tighter than the job needs. I also wonder whether some of the newer lads got signed off in training before they were really ready. I want to know honestly whether it's technique or the setup I'm given.` },
+  { id:"ptest",   emoji:"🧑‍🔬", role:"Pressure / NDT test",     who:"Frank · test & NDT", section:"pipe", img:["Pressure Test","NDT","Test","ptest"],
+    focus:`I do the final gate — pressure-testing the pipe where it's required, or NDT (radiography) where that's called for. I see every reject and its type. Testing has a fixed cycle, so like heat treatment I can become a pacing point if work bunches up. I could Pareto the weld rejects — genuine defects versus tight-criterion fails — and flag whether it's the recently-qualified welders failing most, but nobody's asked me to. I catch problems at the end, not at source.` },
+  { id:"ptrain",  emoji:"👩‍🏫", role:"Trade training (pipe)",   who:"Cathy · trade training", section:"pipe", tier:"office", img:["Pipe Training","Trade Training Pipe","ptrain"],
+    focus:`I run trade training for the pipe welders — bringing them up the qualification matrix (plate, then positions, up to 5G) before they hit the shop. Honestly we're under real recruitment and trade pressure to get people qualified and out, and I worry we're signing some off quicker than they're truly ready. If first-time pass is sitting at 50 to 60 per cent, some of that could be capability we passed too early — it's worth checking whether the recent starters fail more than the seasoned hands.` }
+];
+const NAME = st => st.who.split(" · ")[0];
+const SUB  = st => st.who.split(" · ")[1] || "";
+
+function personaSystem(st){
+  const shared = (st.section==="pipe") ? SHARED_PIPE : SHARED_STRUCT;
+  const where = (st.section==="pipe") ? "the pipe shop of a naval shipyard" : "the structural shop of a naval shipyard";
+  return `You are ${NAME(st)}, the ${st.role} worker in ${where} building Hunter-class frigates. Speak in the first person, plainly and briefly — usually 2 to 4 sentences — like a real person on the floor, with a bit of character and dry humour. ${st.focus}
+
+${shared}
+
+How to behave: answer whatever the improvement lead asks, but reveal things naturally as they ask good questions — don't dump everything at once, and don't lecture. It's fine and good to point up or down the line ("the fit-up I get isn't square", "ask training how quick they're passing people"). Stay in character always; never mention being an AI or a model. You only know your own shop — if asked about the other shop or something outside your spot, say so in character and suggest who would know.`;
+}
+
+const ANALYST_STRUCT = `You are a plain-spoken continuous-improvement coach who has spent years on manufacturing floors including naval shipbuilding. You've just been handed the notes from a walk down the STRUCTURAL line (Building 20), where an improvement lead interviewed each station in turn. Your job is to connect the threads across stations and find where the flow is really breaking and why.
+
+Reason with Theory of Constraints / Drum-Buffer-Rope (find the one constraint that paces the system; it may be space, information or a decision, not a machine), Lean (the eight wastes, flow before efficiency, pull not push, process vs standard, visual management), and the four types of problem. Trace symptoms to their cause — a quality issue at one station is often created by a change somewhere else. Name the most likely ROOT CAUSE(S), each classified as one of: material / supplier · specification or standard set tighter than the product needs (over-processing) · people / new starters · capability · time & pressure · process (how work is released) · space. A symptom can have more than one root, and the loudest complaint is rarely the cause. In particular, treat "quality failures" carefully: high rework is often not a defect problem but an ACCEPTANCE STANDARD problem — a standard set tighter than the structure requires — so before blaming material or people, ask whether the standard itself is right and who owns it.
+
+Remember the real constraint often isn't on the floor at all — it sits in the enabling functions: a PLANNING rule (releasing to the cut date rather than to when work is needed); a NESTING choice (packing parts for plate yield rather than for flow, so batches are set by the plate not the unit); MANUFACTURING ENGINEERING methods and build sequence that assume clean material and ordered parts; DESIGN / product-model maturity (the information the line runs on); SUPPLY CHAIN / PROCUREMENT decisions (material sourcing and spec); and above all, the ACCEPTANCE STANDARD itself — a very common hidden root of "weld failures" is a standard set tighter than the vessel structurally needs (over-processing), where the real question is who owns that standard: an internally gold-plated BAE standard versus what the classification society (Lloyd's) genuinely requires. QUALITY / DIMENSIONAL CONTROL hold the reject data to test whether a fault is a special cause or a common cause (the four types of problem). If a pass rate is low and steady — for example a first-time 5G weld pass rate around 50 to 60 per cent — that stability is the signature of a COMMON CAUSE: the system as set up produces it, so the fix is to change the system (procedure, fit-up, access, training, or the standard), not to chase or blame individual welders. The single most useful cut is a Pareto of the failure modes: how many rejects are genuine fitness-for-service defects versus failures against a tighter-than-needed criterion — that split says whether it is a capability problem or a standard problem, and the rework hours it costs are often the real hidden constraint. For pipe / 5G welding specifically, weld quality is usually made or lost upstream of the welder — at fit-up and access (root gap, alignment, cleanliness, and whether the joint can physically be reached), plus procedure and consumable control — so trace a low pipe pass rate to those before concluding it is welder skill. Do not assert a material or supplier cause unless the evidence from the walk supports it — if the thread points at the standard, say so and recommend verifying the applied acceptance criteria against the actual class requirement. If the walk included any of these functions, weigh what they said heavily and follow the thread up to the decision. If it didn't, and the threads point upstream, say so plainly and name the decision to go and verify — a constraint that is a decision nobody owns is still the constraint.
+
+Answer in four parts, with these exact headings:
+## Where it's breaking
+The stage or condition that's pacing the whole line, and the evidence from the interviews — quote what people said.
+## Why — tracing the threads
+The chain of cause across stations, in plain words. Show how a symptom at one station leads back to a change or condition elsewhere. Name the root-cause category for each thread.
+## What to do
+Ranked, cheapest and most reversible first. For each, say what would have to be true for it to work.
+## The principle
+For each recommendation, name the concept it comes from, why it exists, and what they gain by understanding it.
+
+Rules: every recommendation traces to a named principle. Plain English, short sentences, no consultant jargon. Never blame a person or a role — aim at the system. Say what is uncertain and what to go and verify on the floor. Build the reader's capability. Also weigh TRADE TRAINING: if welders are passed through the qualification matrix too fast under recruitment/trade pressure, under-baked capability shows up downstream as rework — check whether newly-passed welders account for a disproportionate share of rejects.`;
+
+const ANALYST_PIPE = `You are a plain-spoken continuous-improvement coach who has spent years in pipe shops and naval shipbuilding. You've just been handed the notes from a walk through the PIPE SHOP, where an improvement lead interviewed each station. Connect the threads and find where the flow is really breaking and why.
+
+IMPORTANT: this shop already runs a MATURE continuous-improvement culture — heijunka level-loading and standard WIP/flow limits by diameter, material type and complexity. Do NOT diagnose it like a chaotic line or assume basic pull / visual-management gaps; the people are proud of their flow rules. Look for the subtler, real constraints.
+
+Reason with Theory of Constraints / Drum-Buffer-Rope, Lean (the eight wastes, flow, pull, SMED / changeover reduction, heijunka, process vs standard) and the four types of problem. The most likely ROOT CAUSE categories here: TRADE TRAINING passing welders through the qualification matrix too fast under recruitment/trade pressure (capability released before it's ready → rework); DIE-CHANGE CHANGEOVER time on the benders and the batching forced by strict material separation (carbon vs copper-nickel vs stainless); HEAT-TREAT or TEST (pressure / NDT) capacity; FIT-UP & ACCESS (where 5G quality is usually won or lost); and the ACCEPTANCE STANDARD (tighter than the job needs vs a genuine capability gap). A steady first-time 5G pass rate around 50 to 60 per cent is the signature of a COMMON CAUSE — the system produces it, not a few bad welders — so change the system; the highest-value cut is a Pareto of failure modes PLUS checking whether recently-passed welders account for a disproportionate share, which would point straight at training pass-through.
+
+Answer in four parts, with these exact headings:
+## Where it's breaking
+The stage or condition pacing the shop, and the evidence from the interviews — quote what people said.
+## Why — tracing the threads
+The chain of cause across stations, in plain words, naming the root-cause category for each thread.
+## What to do
+Ranked, cheapest and most reversible first. For each, say what would have to be true for it to work.
+## The principle
+For each recommendation, name the concept it comes from (SMED, heijunka, TOC, the four types of problem, etc.), why it exists, and what they gain.
+
+Rules: every recommendation traces to a named principle. Plain English, short sentences, no jargon dumps. Never blame a person or a role — aim at the system. Say what is uncertain and what to go and verify on the floor and in the data. Build the reader's capability.`;
+
+const STARTERS = ["Walk me through your typical day.","Where do you end up waiting?","Any quality issues lately?","What piles up around here?","What would you change if you could?"];
+
+/* ---------- state ---------- */
+let convos = load(LS.convos, {});
+let active = null, mode = "welcome", streaming = false;
+let activeSection = localStorage.getItem(LS.section) || "structural";
+let apiKey = localStorage.getItem(LS.key) || "";
+let model = localStorage.getItem(LS.model) || "claude-opus-4-8";
+let elevenKey = localStorage.getItem(LS.eleven) || "";
+
+function load(k,d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
+function saveConvos(){ localStorage.setItem(LS.convos, JSON.stringify(convos)); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function stById(id){ return STATIONS.find(s=>s.id===id); }
+function secOf(st){ return st.section || "structural"; }
+function stationsInSection(sec){ return STATIONS.filter(s=>secOf(s)===sec); }
+function visited(id){ return (convos[id]||[]).some(m=>m.role==="assistant"); }
+function nVisited(){ return stationsInSection(activeSection).filter(s=>visited(s.id)).length; }
+
+/* ---------- tiny markdown ---------- */
+function md(src){
+  const lines = esc(src).split("\n"); let html="",i=0;
+  const inline = t => t.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  const BLOCK = /^\s*(#{1,3}\s|[-*]\s|\d+[.)]\s|&gt;|-{3,}\s*$)/;   // real block starts only
+  let guard=0;
+  while(i<lines.length && guard++<50000){ let ln=lines[i];
+    if(/^\s*###\s+/.test(ln)){ html+="<h3>"+inline(ln.replace(/^\s*###\s+/,""))+"</h3>"; i++; continue; }
+    if(/^\s*##\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*##\s+/,""))+"</h2>"; i++; continue; }
+    if(/^\s*#\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*#\s+/,""))+"</h2>"; i++; continue; }
+    if(/^\s*(-{3,})\s*$/.test(ln)){ html+="<hr>"; i++; continue; }
+    if(/^\s*&gt;\s?/.test(ln)){ let q=[]; while(i<lines.length&&/^\s*&gt;\s?/.test(lines[i])){ q.push(inline(lines[i].replace(/^\s*&gt;\s?/,""))); i++; } html+="<blockquote>"+q.join("<br>")+"</blockquote>"; continue; }
+    if(/^\s*[-*]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*[-*]\s+/,""))+"</li>"); i++; } html+="<ul>"+it.join("")+"</ul>"; continue; }
+    if(/^\s*\d+[.)]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*\d+[.)]\s+/,""))+"</li>"); i++; } html+="<ol>"+it.join("")+"</ol>"; continue; }
+    if(/^\s*$/.test(ln)){ i++; continue; }
+    // paragraph — ALWAYS consume the current line first so i can never stall
+    let p=[inline(ln)]; i++;
+    while(i<lines.length && !/^\s*$/.test(lines[i]) && !BLOCK.test(lines[i])){ p.push(inline(lines[i])); i++; }
+    html+="<p>"+p.join("<br>")+"</p>";
+  }
+  return html;
+}
+function stripMd(t){ return String(t).replace(/[#*`>_-]+/g," ").replace(/\s+/g," ").trim(); }
+
+/* ---------- station artwork (blueprint scenes: the machine + the person) ---------- */
+function worker(x,y,s){ s=s||1; return `<g transform="translate(${x},${y}) scale(${s})">
+  <ellipse class="pf" cx="0" cy="-53" rx="11" ry="7"/>
+  <rect class="pf" x="-13" y="-50" width="26" height="4" rx="2"/>
+  <circle class="pf" cx="0" cy="-39" r="7"/>
+  <path class="pf" d="M-9,-14 Q0,-20 9,-14 L8,-30 -8,-30 Z"/>
+  <path class="pf" d="M-8,-14 L-7,0 -2,0 -1,-14 Z"/>
+  <path class="pf" d="M8,-14 L7,0 2,0 1,-14 Z"/>
+</g>`; }
+
+const SCENE = {
+  cut:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="34" y1="34" x2="300" y2="34"/>
+    <line class="k" x1="44" y1="34" x2="44" y2="118"/>
+    <line class="k" x1="290" y1="34" x2="290" y2="118"/>
+    <rect class="f" x="150" y="24" width="30" height="18" rx="2"/>
+    <line class="k" x1="165" y1="42" x2="165" y2="102"/>
+    <g class="sp"><line x1="165" y1="103" x2="157" y2="94"/><line x1="165" y1="103" x2="173" y2="94"/><line x1="165" y1="103" x2="165" y2="92"/></g>
+    <rect class="f" x="46" y="104" width="214" height="14" rx="1"/>
+    <rect class="t" x="70" y="107" width="28" height="8"/>
+    <rect class="t" x="200" y="107" width="20" height="8"/>
+    ${worker(360,118,.95)}`,
+  profile:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="40" y1="34" x2="300" y2="34"/>
+    <line class="k" x1="50" y1="34" x2="50" y2="70"/><line class="k" x1="290" y1="34" x2="290" y2="70"/>
+    <rect class="f" x="150" y="30" width="28" height="16" rx="2"/><line class="k" x1="164" y1="46" x2="164" y2="92"/>
+    <g class="sp"><line x1="164" y1="93" x2="157" y2="85"/><line x1="164" y1="93" x2="171" y2="85"/><line x1="164" y1="93" x2="164" y2="83"/></g>
+    <path class="f" d="M44,95 l210,0 0,6 -210,0 z"/><rect class="f" x="120" y="101" width="60" height="6"/>
+    <g class="k"><circle cx="60" cy="112" r="6"/><circle cx="96" cy="112" r="6"/><circle cx="132" cy="112" r="6"/><circle cx="168" cy="112" r="6"/><circle cx="204" cy="112" r="6"/><circle cx="240" cy="112" r="6"/></g>
+    ${worker(360,118,.95)}`,
+  bend:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="118" y="26" width="154" height="18" rx="1"/>
+    <line class="k" x1="132" y1="44" x2="132" y2="118"/><line class="k" x1="258" y1="44" x2="258" y2="118"/>
+    <rect class="f" x="174" y="44" width="42" height="38" rx="2"/>
+    <line class="k" x1="195" y1="26" x2="195" y2="44"/>
+    <path class="k" d="M150,106 q45,-36 90,0" fill="none" stroke-width="3"/>
+    <line class="k" x1="138" y1="112" x2="252" y2="112"/>
+    ${worker(352,118,.95)}`,
+  dress:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="26" y="110" width="98" height="7" rx="1"/>
+    <rect class="f" x="34" y="101" width="90" height="7" rx="1"/>
+    <rect class="f" x="24" y="92" width="94" height="7" rx="1"/>
+    <path class="k" d="M134,117 l0,-24 m0,24 l16,0"/>
+    <path class="k" d="M158,117 l0,-24 m-8,0 l16,0"/>
+    <rect class="t" x="60" y="115" width="9" height="7"/><circle class="t" cx="95" cy="118" r="4"/><rect class="t" x="108" y="114" width="8" height="8"/>
+    <line class="k" x1="192" y1="122" x2="202" y2="98"/><line class="k" x1="232" y1="122" x2="222" y2="98"/><line class="k" x1="186" y1="98" x2="238" y2="98"/>
+    <rect class="f" x="182" y="90" width="60" height="7" rx="1"/><rect class="f" x="208" y="97" width="7" height="11"/>
+    <rect class="k" x="252" y="90" width="22" height="10" rx="2"/>
+    <g class="sp"><line x1="252" y1="95" x2="242" y2="88"/><line x1="252" y1="95" x2="242" y2="103"/><line x1="252" y1="95" x2="239" y2="95"/></g>
+    ${worker(292,122,.95)}`,
+  robot:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="58" y="90" width="26" height="30" rx="2"/>
+    <path class="k" d="M71,90 L96,58 L150,50 L184,74" fill="none" stroke-width="3"/>
+    <circle class="f" cx="96" cy="58" r="5"/><circle class="f" cx="150" cy="50" r="5"/>
+    <line class="k" x1="184" y1="74" x2="190" y2="96"/>
+    <g class="sp"><line x1="190" y1="97" x2="182" y2="90"/><line x1="190" y1="97" x2="198" y2="90"/><line x1="190" y1="97" x2="190" y2="87"/><line x1="190" y1="97" x2="202" y2="99"/><line x1="190" y1="97" x2="178" y2="99"/></g>
+    <rect class="f" x="120" y="104" width="200" height="14" rx="1"/>
+    <line class="k" x1="190" y1="104" x2="300" y2="104" stroke-dasharray="7 5"/>
+    ${worker(360,118,.95)}`,
+  smwp:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="34" y1="40" x2="306" y2="40"/>
+    <line class="k" x1="46" y1="40" x2="46" y2="118"/>
+    <line class="k" x1="294" y1="40" x2="294" y2="118"/>
+    <rect class="f" x="156" y="30" width="30" height="16" rx="2"/><line class="k" x1="171" y1="46" x2="171" y2="64"/>
+    <rect class="f" x="60" y="106" width="220" height="12" rx="1"/>
+    <g class="k"><path d="M96,106 l0,-40 m-12,0 l24,0"/><path d="M140,106 l0,-40 m-12,0 l24,0"/><path d="M184,106 l0,-40 m-12,0 l24,0"/><path d="M228,106 l0,-40 m-12,0 l24,0"/></g>
+    ${worker(360,118,.95)}`,
+  bulkhead:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <path class="f" d="M120,60 L210,40 L300,60 L210,80 Z"/>
+    <path class="f" d="M120,60 L120,104 L210,124 L210,80 Z"/>
+    <path class="f" d="M300,60 L300,104 L210,124 L210,80 Z" opacity=".85"/>
+    <g class="t"><line x1="147" y1="72" x2="147" y2="114"/><line x1="174" y1="78" x2="174" y2="120"/><line x1="210" y1="80" x2="210" y2="124"/></g>
+    <g class="t"><line x1="246" y1="78" x2="246" y2="120"/><line x1="273" y1="72" x2="273" y2="114"/></g>
+    ${worker(360,118,.95)}`,
+  deck:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="60" y="70" width="230" height="40" rx="1"/>
+    <g class="t"><line x1="100" y1="70" x2="100" y2="110"/><line x1="140" y1="70" x2="140" y2="110"/><line x1="180" y1="70" x2="180" y2="110"/><line x1="220" y1="70" x2="220" y2="110"/><line x1="260" y1="70" x2="260" y2="110"/></g>
+    <g class="k"><rect x="150" y="130" width="20" height="12" rx="1" fill="var(--accent-bg)"/><rect x="184" y="130" width="20" height="12" rx="1"/><rect x="218" y="130" width="20" height="12" rx="1"/></g>
+    <g class="t"><path d="M172,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M206,136 l10,0 m-4,-4 l4,4 -4,4"/></g>
+    ${worker(360,118,.95)}`,
+  unit:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <path class="t" d="M250,52 L392,52 L382,66 L300,66 L292,76 L268,76 L260,66 L250,66 Z"/>
+    <rect class="t" x="300" y="40" width="30" height="12"/>
+    <rect class="f" x="66" y="44" width="92" height="74"/>
+    <g class="t"><line x1="90" y1="44" x2="90" y2="118"/><line x1="114" y1="44" x2="114" y2="118"/><line x1="138" y1="44" x2="138" y2="118"/></g>
+    <rect class="k" x="100" y="86" width="24" height="32"/>
+    <g class="k"><rect x="188" y="130" width="20" height="12" rx="1"/><rect x="222" y="130" width="20" height="12" rx="1"/><rect x="256" y="130" width="20" height="12" rx="1" fill="var(--accent-bg)"/><rect x="290" y="130" width="20" height="12" rx="1"/></g>
+    <g class="t"><path d="M210,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M244,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M278,136 l10,0 m-4,-4 l4,4 -4,4"/></g>
+    ${worker(360,118,.95)}
+    <rect class="pf" x="344" y="96" width="12" height="15" rx="1"/>`,
+  plan:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="40" y="30" width="230" height="84" rx="3"/>
+    <line class="t" x1="40" y1="48" x2="270" y2="48"/>
+    <g class="f"><rect x="66" y="56" width="70" height="8" rx="2"/><rect x="112" y="70" width="96" height="8" rx="2"/><rect x="150" y="84" width="78" height="8" rx="2"/><rect x="86" y="98" width="58" height="8" rx="2"/></g>
+    <g class="t"><line x1="52" y1="60" x2="60" y2="60"/><line x1="52" y1="74" x2="60" y2="74"/><line x1="52" y1="88" x2="60" y2="88"/><line x1="52" y1="102" x2="60" y2="102"/></g>
+    <line class="k" x1="186" y1="30" x2="186" y2="114" stroke-dasharray="4 5"/>
+    ${worker(344,118,.95)}`,
+  eng:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="46" y="44" width="228" height="72" rx="2"/>
+    <path class="k" d="M58,52 h56 v26 h-56 z" fill="none"/>
+    <path class="k" d="M120,52 l34,0 10,26 -44,0 z" fill="none"/>
+    <circle class="k" cx="196" cy="66" r="12" fill="none"/>
+    <path class="k" d="M216,52 h50 v18 h-50 z" fill="none"/>
+    <path class="k" d="M58,84 h64 v26 h-64 z" fill="none"/>
+    <path class="k" d="M130,84 h44 v26 h-44 z" fill="none"/>
+    <path class="k" d="M182,76 h84 v34 h-84 z" fill="none"/>
+    ${worker(344,118,.95)}`,
+  design:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="44" y="34" width="212" height="80" rx="3"/>
+    <line class="k" x1="150" y1="114" x2="150" y2="120"/><line class="k" x1="126" y1="120" x2="174" y2="120"/>
+    <g class="k" fill="none">
+      <path d="M78,82 L130,66 L188,82 L136,98 Z"/>
+      <path d="M78,82 L78,102 L136,116 L136,98"/>
+      <path d="M188,82 L188,102 L136,116"/>
+    </g>
+    <g class="t"><line x1="104" y1="74" x2="104" y2="109"/><line x1="162" y1="74" x2="162" y2="109"/></g>
+    ${worker(344,118,.95)}`,
+  mfg:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="40" y="34" width="248" height="80" rx="3"/>
+    <g class="f">
+      <path d="M64,74 L92,62 L120,74 L92,86 Z"/><path d="M64,74 L64,92 L92,104 L92,86 Z"/><path d="M120,74 L120,92 L92,104 L92,86 Z" opacity=".85"/>
+      <path d="M140,74 L168,62 L196,74 L168,86 Z"/><path d="M140,74 L140,92 L168,104 L168,86 Z"/><path d="M196,74 L196,92 L168,104 L168,86 Z" opacity=".85"/>
+      <path d="M216,74 L244,62 L272,74 L244,86 Z"/><path d="M216,74 L216,92 L244,104 L244,86 Z"/><path d="M272,74 L272,92 L244,104 L244,86 Z" opacity=".85"/>
+    </g>
+    <g class="t"><path d="M122,80 h16 m-5,-4 l5,4 -5,4"/><path d="M198,80 h16 m-5,-4 l5,4 -5,4"/></g>
+    ${worker(344,118,.95)}`,
+  supply:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="40" y="96" width="72" height="7"/><rect class="f" x="44" y="88" width="68" height="7"/><rect class="f" x="48" y="80" width="64" height="7"/>
+    <path class="t" d="M118,92 h26 m-8,-6 l8,6 -8,6"/>
+    <rect class="f" x="156" y="74" width="92" height="36" rx="2"/>
+    <path class="f" d="M248,84 h30 l16,16 0,10 -46,0 z"/>
+    <rect class="k" x="256" y="88" width="20" height="14" rx="1"/>
+    <g class="k"><circle cx="182" cy="112" r="7"/><circle cx="222" cy="112" r="7"/><circle cx="280" cy="112" r="7"/></g>
+    ${worker(352,118,.9)}`,
+  quality:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="54" y="80" width="150" height="34" rx="1"/>
+    <g class="t"><line x1="54" y1="118" x2="54" y2="128"/><line x1="204" y1="118" x2="204" y2="128"/><line x1="54" y1="124" x2="204" y2="124"/><path d="M54,124 l7,-3 0,6 z"/><path d="M204,124 l-7,-3 0,6 z"/></g>
+    <g class="t"><line x1="212" y1="80" x2="222" y2="80"/><line x1="212" y1="114" x2="222" y2="114"/><line x1="217" y1="80" x2="217" y2="114"/></g>
+    <g class="k"><circle cx="298" cy="66" r="9"/><line x1="298" y1="75" x2="286" y2="112"/><line x1="298" y1="75" x2="310" y2="112"/><line x1="298" y1="75" x2="298" y2="112"/></g>
+    <line class="t" x1="290" y1="68" x2="204" y2="92" stroke-dasharray="3 4"/>
+    ${worker(366,118,.85)}`,
+  pcut:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="88" y1="122" x2="88" y2="96"/><line class="k" x1="232" y1="122" x2="232" y2="96"/>
+    <rect class="f" x="56" y="84" width="204" height="20" rx="10"/>
+    <ellipse class="f" cx="56" cy="94" rx="6" ry="10"/><ellipse class="f" cx="260" cy="94" rx="6" ry="10"/>
+    <circle class="k" cx="178" cy="72" r="12"/><line class="k" x1="178" y1="72" x2="178" y2="72"/>
+    <g class="sp"><line x1="178" y1="94" x2="171" y2="86"/><line x1="178" y1="94" x2="185" y2="86"/><line x1="178" y1="94" x2="178" y2="84"/></g>
+    ${worker(344,118,.95)}`,
+  pfit:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="86" y1="122" x2="86" y2="102"/><line class="k" x1="248" y1="122" x2="248" y2="102"/>
+    <rect class="f" x="48" y="84" width="112" height="18" rx="9"/>
+    <rect class="f" x="196" y="84" width="112" height="18" rx="9"/>
+    <rect class="f" x="162" y="74" width="10" height="38" rx="2"/><rect class="f" x="184" y="74" width="10" height="38" rx="2"/>
+    <g class="t"><circle cx="167" cy="82" r="2"/><circle cx="167" cy="104" r="2"/><circle cx="189" cy="82" r="2"/><circle cx="189" cy="104" r="2"/></g>
+    ${worker(348,118,.95)}`,
+  pweld:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="90" y1="122" x2="90" y2="102"/><line class="k" x1="196" y1="122" x2="196" y2="102"/>
+    <rect class="f" x="58" y="82" width="176" height="20" rx="10"/>
+    <ellipse class="f" cx="58" cy="92" rx="6" ry="10"/>
+    <line class="k" x1="212" y1="80" x2="212" y2="104"/>
+    <g class="sp"><line x1="212" y1="80" x2="205" y2="72"/><line x1="212" y1="80" x2="219" y2="72"/><line x1="212" y1="80" x2="212" y2="70"/></g>
+    <line class="k" x1="284" y1="92" x2="220" y2="84"/>
+    ${worker(300,122,.95)}`,
+  ndt:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="70" y="82" width="190" height="18" rx="9"/>
+    <ellipse class="f" cx="70" cy="91" rx="5" ry="9"/>
+    <line class="k" x1="176" y1="80" x2="176" y2="102"/>
+    <rect class="k" x="162" y="40" width="28" height="16" rx="2"/>
+    <g class="t"><line x1="176" y1="56" x2="162" y2="100" stroke-dasharray="3 3"/><line x1="176" y1="56" x2="190" y2="100" stroke-dasharray="3 3"/></g>
+    <rect class="f" x="156" y="104" width="40" height="6" rx="1"/>
+    ${worker(352,118,.9)}`,
+  train:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="44" y="40" width="122" height="78" rx="3"/>
+    <g class="t"><line x1="44" y1="62" x2="166" y2="62"/><line x1="44" y1="84" x2="166" y2="84"/><line x1="44" y1="106" x2="166" y2="106"/><line x1="86" y1="40" x2="86" y2="118"/><line x1="126" y1="40" x2="126" y2="118"/></g>
+    <g class="k"><path d="M54,54 l4,5 9,-11" fill="none"/><path d="M94,76 l4,5 9,-11" fill="none"/><path d="M134,98 l4,5 9,-11" fill="none"/></g>
+    <rect class="f" x="196" y="70" width="72" height="48" rx="2"/>
+    <g class="sp"><line x1="232" y1="96" x2="224" y2="88"/><line x1="232" y1="96" x2="240" y2="88"/><line x1="232" y1="96" x2="232" y2="86"/></g>
+    ${worker(344,118,.95)}`,
+  ptrain:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="44" y="40" width="122" height="78" rx="3"/>
+    <g class="t"><line x1="44" y1="62" x2="166" y2="62"/><line x1="44" y1="84" x2="166" y2="84"/><line x1="44" y1="106" x2="166" y2="106"/><line x1="86" y1="40" x2="86" y2="118"/><line x1="126" y1="40" x2="126" y2="118"/></g>
+    <g class="k"><path d="M54,54 l4,5 9,-11" fill="none"/><path d="M94,76 l4,5 9,-11" fill="none"/><path d="M134,98 l4,5 9,-11" fill="none"/></g>
+    <rect class="f" x="196" y="86" width="74" height="16" rx="8"/>
+    <line class="k" x1="248" y1="84" x2="248" y2="104"/>
+    <g class="sp"><line x1="248" y1="84" x2="241" y2="77"/><line x1="248" y1="84" x2="255" y2="77"/><line x1="248" y1="84" x2="248" y2="74"/></g>
+    ${worker(344,118,.95)}`,
+  pstore:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="44" y="46" width="256" height="72"/>
+    <line class="k" x1="44" y1="82" x2="300" y2="82"/>
+    <line class="k" x1="128" y1="46" x2="128" y2="118"/><line class="k" x1="216" y1="46" x2="216" y2="118"/>
+    <g class="f"><circle cx="64" cy="64" r="7"/><circle cx="82" cy="64" r="7"/><circle cx="100" cy="64" r="7"/><circle cx="70" cy="100" r="7"/><circle cx="88" cy="100" r="7"/></g>
+    <g class="f"><circle cx="150" cy="64" r="7"/><circle cx="168" cy="64" r="7"/><circle cx="156" cy="100" r="7"/></g>
+    <g class="f"><circle cx="238" cy="64" r="7"/><circle cx="256" cy="64" r="7"/><circle cx="274" cy="64" r="7"/><circle cx="246" cy="100" r="7"/></g>
+    ${worker(344,118,.9)}`,
+  pbend:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <path class="k" d="M60,114 L60,74 Q60,50 84,50 L168,50" fill="none" stroke-width="10"/>
+    <rect class="f" x="150" y="42" width="40" height="16" rx="2"/>
+    <rect class="f" x="46" y="98" width="30" height="18" rx="2"/>
+    <g class="t"><rect x="214" y="98" width="26" height="12" rx="1"/><rect x="214" y="83" width="26" height="12" rx="1"/></g>
+    ${worker(344,118,.95)}`,
+  pflare:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="96" y1="122" x2="96" y2="102"/><line class="k" x1="190" y1="122" x2="190" y2="102"/>
+    <rect class="f" x="60" y="86" width="150" height="16" rx="8"/>
+    <ellipse class="f" cx="60" cy="94" rx="5" ry="9"/>
+    <path class="f" d="M210,80 l20,-7 0,38 -20,-7 z"/>
+    ${worker(344,118,.9)}`,
+  pht:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="56" y="58" width="164" height="58" rx="4"/>
+    <rect class="f" x="72" y="82" width="132" height="10" rx="5"/>
+    <g class="sp"><path d="M92,74 q6,-9 12,0 q6,9 12,0" fill="none"/><path d="M132,74 q6,-9 12,0 q6,9 12,0" fill="none"/><path d="M172,74 q6,-9 12,0 q6,9 12,0" fill="none"/></g>
+    ${worker(344,118,.9)}`,
+  pflush:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="56" y="86" width="176" height="16" rx="8"/>
+    <ellipse class="f" cx="56" cy="94" rx="5" ry="9"/>
+    <g class="t"><path d="M74,94 h30 m-9,-5 l9,5 -9,5"/><path d="M126,94 h30 m-9,-5 l9,5 -9,5"/><path d="M178,94 h30 m-9,-5 l9,5 -9,5"/></g>
+    <rect class="k" x="238" y="70" width="36" height="46" rx="3"/><path class="t" d="M244,90 h24 v20 h-24 z"/>
+    ${worker(352,118,.9)}`,
+  pgrind:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="56" y="86" width="150" height="16" rx="8"/>
+    <ellipse class="f" cx="56" cy="94" rx="5" ry="9"/>
+    <rect class="k" x="210" y="82" width="24" height="12" rx="2"/>
+    <g class="sp"><line x1="210" y1="94" x2="200" y2="86"/><line x1="210" y1="94" x2="200" y2="102"/><line x1="210" y1="94" x2="197" y2="94"/></g>
+    <line class="k" x1="284" y1="90" x2="234" y2="88"/>
+    ${worker(300,122,.95)}`,
+  ptest:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="60" y="90" width="180" height="16" rx="8"/>
+    <ellipse class="f" cx="60" cy="98" rx="5" ry="9"/>
+    <line class="k" x1="150" y1="74" x2="150" y2="90"/>
+    <circle class="k" cx="150" cy="60" r="16"/>
+    <line class="k" x1="150" y1="60" x2="161" y2="52"/>
+    <circle class="pf" cx="150" cy="60" r="2"/>
+    ${worker(344,118,.9)}`
+};
+const CAP = { cut:"PLATE CUTTING", profile:"PROFILE & T-BAR CUTTING", bend:"PROFILE BENDING PRESS", dress:"DRESSING · CENTRAL HALL", robot:"PLATE ROBOT WELDER", smwp:"STIFFENER MOUNTING · PORTAL", bulkhead:"BULKHEAD FABRICATION", deck:"UNIT LINE · DECK PLATE (WS1)", unit:"UNIT LINE · WS 2–5", plan:"PLANNING · THE SCHEDULE", eng:"NESTING · CUT PROGRAMMES", design:"DESIGN · THE 3D MODEL", mfg:"MANUFACTURING ENGINEERING", supply:"SUPPLY CHAIN · PROCUREMENT", quality:"QUALITY · DIMENSIONAL CONTROL", train:"TRADE TRAINING · PLATE", pstore:"PIPE COURSE / STORE", pcut:"PIPE CUTTING", pbend:"PIPE BENDING · DIE CHANGE", pflare:"PIPE FLARING", pht:"HEAT TREATMENT", pflush:"PIPE FLUSHING", pgrind:"PIPE GRINDING", pfit:"PIPE FIT-UP & TACK", pweld:"PIPE WELDING · 5G", ptest:"PRESSURE / NDT TEST", ptrain:"TRADE TRAINING · PIPE", ndt:"NDT · WELD INSPECTION" };
+function sceneSVG(id){
+  const art = SCENE[id]; if(!art) return "";
+  return `<svg class="scene" viewBox="0 0 420 150" role="img" aria-label="${esc(CAP[id]||"")}" preserveAspectRatio="xMidYMid meet"><text class="cap" x="14" y="22">${esc(CAP[id]||"")}</text>${art}</svg>`;
+}
+
+/* Optional real photos: drop files in a "line-images" folder next to this app,
+   named cut.jpg, parts.jpg, store.jpg, panel.jpg, stiff.jpg, sub.jpg, unit.jpg
+   (jpg / jpeg / png / webp all work). If a photo is there, it replaces the
+   drawing for that station; if not, the drawing stays. Nothing to configure. */
+const photoCache = {};
+/* Build the list of photo URLs to try for a station. Each station's own file
+   names (its real station name, e.g. "Plate Robot Welder") come first, then
+   the id as a fallback. GitHub is case-sensitive and filenames have spaces and
+   "&", so we try a couple of folder capitalisations and URL-encode each name —
+   you shouldn't have to fuss over exact case or spaces. */
+function photoUrls(st){
+  const cap = st.id.charAt(0).toUpperCase() + st.id.slice(1);
+  const names = (st.img || []).concat([st.id, cap]);
+  const exts  = ["png","PNG","jpg","JPG","jpeg","JPEG","webp"];
+  // look in a line-images folder (various capitalisations) AND the repo root
+  const dirs  = ["line-images/","Line-images/","Line-Images/","images/","Images/",""];
+  const out = [], seen = {};
+  for(const d of dirs) for(const n of names) for(const e of exts){
+    const u = d + encodeURIComponent(n + "." + e);
+    if(!seen[u]){ seen[u]=1; out.push(u); }
+  }
+  return out;
+}
+/* Probe every candidate at once and take the first that loads — fast even
+   with a long candidate list, and forgiving about folder / name / case. */
+function resolvePhoto(st){
+  return new Promise(res=>{
+    if(st.id in photoCache){ res(photoCache[st.id]); return; }
+    const urls = photoUrls(st);
+    if(!urls.length){ photoCache[st.id]=null; res(null); return; }
+    let remaining = urls.length, done = false;
+    urls.forEach(src=>{
+      const im = new Image();
+      im.onload = ()=>{ if(done) return; if(im.naturalWidth>0){ done=true; photoCache[st.id]=src; res(src); } else if(--remaining===0){ photoCache[st.id]=null; res(null); } };
+      im.onerror = ()=>{ if(done) return; if(--remaining===0){ photoCache[st.id]=null; res(null); } };
+      im.src = src;
+    });
+  });
+}
+function renderStationVisual(id){
+  const box = $("#stVis"); if(!box) return;
+  const st = stById(id); if(!st) return;
+  box.innerHTML = sceneSVG(id);            // show the drawing instantly
+  resolvePhoto(st).then(src=>{
+    if(!src) return;                        // no photo supplied — keep the drawing
+    if(active!==id || mode!=="chat") return;// user already moved on
+    const b = $("#stVis"); if(!b) return;
+    b.innerHTML = `<figure class="visual-fig"><img class="photo" src="${esc(src)}" alt="${esc(CAP[id]||"")}"><figcaption class="visual-cap">${esc(CAP[id]||"")}</figcaption></figure>`;
+    // also use the photo as this person's speaking avatar next to their words
+    document.querySelectorAll(".msg.assistant .avatar").forEach(a=>{ a.innerHTML = `<img class="avphoto" src="${esc(src)}" alt="">`; });
+  });
+}
+function avatarFace(st){ const src = st && photoCache[st.id]; return src ? `<img class="avphoto" src="${esc(src)}" alt="">` : (st ? st.emoji : "🔎"); }
+
+/* ---------- render strip ---------- */
+function renderSectionTabs(){
+  const bar=$("#sectionTabs"); if(!bar) return;
+  bar.innerHTML = SECTIONS.map(s=>`<button type="button" class="sec-tab ${activeSection===s.id?'on':''}" data-sec="${s.id}">${esc(s.label)}</button>`).join("");
+  bar.querySelectorAll(".sec-tab").forEach(b=>b.onclick=()=>switchSection(b.dataset.sec));
+}
+function switchSection(sec){
+  if(streaming || sec===activeSection) return;
+  activeSection=sec; localStorage.setItem(LS.section, sec);
+  stopSpeak(); renderSectionTabs(); renderStrip(); renderWelcome();
+}
+function renderStrip(){
+  const TIER_LABEL = { office:"the functions behind it", pipe:"pipe & systems · 5G" };
+  let html=""; let prev=null;
+  stationsInSection(activeSection).forEach(s=>{
+    const tier=s.tier||"floor";
+    if(prev){
+      if((prev.tier||"floor")!==tier) html+=`<div class="st-sep"><b>${esc(TIER_LABEL[tier]||tier)}</b></div>`;
+      else html+=`<span class="st-arrow">›</span>`;
+    }
+    html+=`<div class="st-card ${tier==='office'?'office ':''}${active===s.id&&mode==='chat'?'active ':''}${visited(s.id)?'visited':''}" data-id="${s.id}">
+        <div class="badge">✓</div>
+        <div class="st-face">${s.emoji}</div>
+        <div class="st-role">${esc(s.role)}</div>
+        <div class="st-who">${esc(SUB(s))}</div>
+      </div>`;
+    prev=s;
+  });
+  $("#strip").innerHTML = html;
+  $("#strip").querySelectorAll(".st-card").forEach(c=>c.onclick=()=>openStation(c.dataset.id));
+}
+
+/* ---------- render main ---------- */
+const inner = $("#inner"), main = $(".main");
+function scrollDown(){ main.scrollTop = main.scrollHeight; }
+
+function renderWelcome(){
+  mode="welcome"; active=null; stopSpeak();
+  const pipe = activeSection==="pipe";
+  const intro = pipe
+    ? `You're in the <b>Pipe Shop</b> — a different flow with a more mature CI culture (level-loading, WIP limits by diameter, material and complexity). Tap a person and ask about their day; the 5G pass rate, die changes, material separation, heat-treat and test, and how fast training is passing people are all live threads.`
+    : `You're in the <b>Structural shop (Building 20)</b>. Tap a person and ask what their day is really like — where they wait, what piles up, the quality issues. Then follow the thread and walk up to the functions behind the line.`;
+  const step1 = pipe
+    ? `Tap a person above — <b>Marco</b> the pipe welder feels the 5G pass-rate pain; <b>Nina</b> at bending lives the die-change changeovers; <b>Cathy</b> in training may be passing people too fast.`
+    : `Tap a person above — start anywhere. <b>Nadia</b> on the unit line feels the pain; <b>Dave</b> at cutting is where a lot of it begins.`;
+  inner.innerHTML = `
+    <div class="welcome">
+      <p class="eyebrow">Walk the Line · ${pipe?"Pipe Shop":"Structural · Building 20"}</p>
+      <h2>Talk to the floor, one person at a time.</h2>
+      <p>${intro} When you've heard enough, hit <b>◆ Find the root cause</b> and I'll connect what everyone told you. Use the tabs above to switch between the <b>Structural</b> shop and the <b>Pipe Shop</b> — each has its own people and its own diagnosis.</p>
+      <div class="steps">
+        <div><b>1</b><span>${step1}</span></div>
+        <div><b>2</b><span>Ask real questions and push — "why is that?", "where does that come from?", "who'd know?" You can type, or tap 🎤 to speak, or turn on 🔊 to hear them reply.</span></div>
+        <div><b>3</b><span>When the floor keeps pointing upstream, walk up to the <b>functions behind the line</b> (incl. <b>Trade Training</b>) at the end of the strip and ask them <i>why we do it this way</i>.</span></div>
+        <div><b>4</b><span>People get a green ✓ once you've spoken to them. Visit a few, then tap <b>◆ Find the root cause</b> at the bottom.</span></div>
+      </div>
+    </div>`;
+  updateComposer();
+}
+
+function bubble(role, whoLabel, face){
+  const wrap=document.createElement("div"); wrap.className="msg "+role;
+  const av = role==="assistant" ? (face||"🔎") : "YOU";
+  wrap.innerHTML = `<div class="avatar">${av}</div><div class="bubble"><div class="who">${esc(whoLabel)}</div><div class="md"></div></div>`;
+  inner.appendChild(wrap); return wrap.querySelector(".md");
+}
+
+function openStation(id){
+  if(streaming) return;
+  stopSpeak();
+  active=id; mode="chat"; renderStrip();
+  const st=stById(id);
+  inner.innerHTML = `<div class="visual" id="stVis"></div><div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
+  renderStationVisual(id);
+  const conv = convos[id]||[];
+  conv.forEach(m=> bubble(m.role, m.role==="assistant"?NAME(st):"You", avatarFace(st)).innerHTML = md(m.content));
+  if(!conv.length){
+    const s=document.createElement("div"); s.className="suggest";
+    s.innerHTML = STARTERS.map(q=>`<button type="button">${esc(q)}</button>`).join("");
+    inner.appendChild(s);
+    s.querySelectorAll("button").forEach(b=>b.onclick=()=>{ $("#input").value=b.textContent; send(); });
+  }
+  updateComposer(); $("#input").focus(); scrollDown();
+}
+
+function updateComposer(){
+  const input=$("#input"), rc=$("#rcBar");
+  if(mode==="chat" && active){ input.disabled=false; input.placeholder=`Ask ${NAME(stById(active))} something…`; }
+  else if(mode==="synth"){ input.disabled=true; input.placeholder="Reading the whole line…"; }
+  else { input.disabled=false; input.placeholder="Pick a person above, then ask them something…"; }
+  const n=nVisited();
+  if(n>=1 && mode!=="synth" && !streaming){ rc.classList.add("show"); rc.textContent=`◆ Find the root cause  ·  spoken to ${n}`; rc.disabled=false; }
+  else if(streaming){ rc.disabled=true; }
+  else { rc.classList.remove("show"); }
+}
+
+/* ---------- API streaming (with idle timeout so it can't freeze) ---------- */
+async function callClaude(system, messages, target, maxTokens){
+  let acc=""; target.innerHTML=`<span class="cursor"></span>`; scrollDown();
+  const ctrl = new AbortController();
+  let idle; const kick = ()=>{ clearTimeout(idle); idle=setTimeout(()=>ctrl.abort(), 45000); };
+  kick();
+  let res;
+  try{
+    res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", signal:ctrl.signal,
+      headers:{ "content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true" },
+      body: JSON.stringify({ model, max_tokens:maxTokens, system, stream:true, messages })
+    });
+    if(!res.ok){ let d=""; try{ const j=await res.json(); d=j?.error?.message||""; }catch(e){} throw new Error(friendly(res.status,d)); }
+    const reader=res.body.getReader(), dec=new TextDecoder(); let buf="";
+    while(true){ const {value,done}=await reader.read(); if(done) break; kick();
+      buf+=dec.decode(value,{stream:true}); const parts=buf.split("\n\n"); buf=parts.pop();
+      for(const part of parts){ const line=part.split("\n").find(l=>l.startsWith("data:")); if(!line) continue;
+        const data=line.slice(5).trim(); if(!data||data==="[DONE]") continue;
+        let ev; try{ ev=JSON.parse(data); }catch(e){ continue; }
+        if(ev.type==="content_block_delta" && ev.delta?.type==="text_delta"){ acc+=ev.delta.text; target.innerHTML=md(acc)+`<span class="cursor"></span>`; scrollDown(); }
+        else if(ev.type==="error"){ throw new Error(ev.error?.message||"The model returned an error."); }
+      }
+    }
+  } catch(e){
+    if(e.name==="AbortError") throw new Error("The reply stalled and timed out. Tap send again to retry.");
+    throw e;
+  } finally { clearTimeout(idle); }
+  target.innerHTML=md(acc); return acc;
+}
+function friendly(status,d){
+  if(status===401) return "That API key was rejected. Open Setup and check it (starts with “sk-ant-”).";
+  if(status===400) return "The request was rejected: "+(d||"bad request")+".";
+  if(status===429) return "Rate limited or out of credit. Wait a moment or check your usage in the Anthropic console.";
+  if(status>=500) return "Anthropic's service is busy. Give it a few seconds and try again.";
+  return "Request failed ("+status+"). "+(d||"");
+}
+function showErr(msg){ clearErr(); const b=document.createElement("div"); b.className="err-banner"; b.id="errB"; b.innerHTML="<b>Couldn't get a reply.</b> "+esc(msg); inner.appendChild(b); scrollDown(); }
+function clearErr(){ const e=$("#errB"); if(e) e.remove(); }
+
+/* ---------- send to a person ---------- */
+async function send(){
+  const input=$("#input"); const text=input.value.trim();
+  if(!text||streaming) return;
+  if(!apiKey){ openSettings(); return; }
+  if(mode!=="chat"||!active) return;
+  clearErr(); stopSpeak(); if(voiceOn) unlockAudio();
+  const st=stById(active);
+  document.querySelectorAll(".suggest").forEach(s=>s.remove());
+  convos[active]=convos[active]||[];
+  convos[active].push({role:"user",content:text});
+  bubble("user","You").innerHTML=md(text);
+  input.value=""; autosize(); saveConvos(); scrollDown();
+  streaming=true; $("#send").disabled=true; updateComposer();
+  const target=bubble("assistant", NAME(st), avatarFace(st));
+  const wasVisited = visited(active);
+  try{
+    const acc = await callClaude(personaSystem(st), convos[active].map(m=>({role:m.role,content:m.content})), target, 700);
+    convos[active].push({role:"assistant",content:acc}); saveConvos(); renderStrip();
+    if(!wasVisited) toast(`You've spoken to ${NAME(st)} — tap ◆ Find the root cause whenever you're ready.`);
+    if(voiceOn) speak(acc, st.id);
+  }catch(err){ target.closest(".msg").remove(); showErr(err.message||String(err)); }
+  finally{ streaming=false; $("#send").disabled=false; updateComposer(); scrollDown(); input.focus(); }
+}
+
+/* ---------- root cause ---------- */
+async function rootCause(){
+  if(streaming) return;
+  if(!apiKey){ openSettings(); return; }
+  const inSec = stationsInSection(activeSection);
+  const vs = inSec.filter(s=>visited(s.id));
+  if(!vs.length) return;
+  const secLabel = (SECTIONS.find(s=>s.id===activeSection)||{}).label || "";
+  stopSpeak(); mode="synth"; active=null; renderStrip(); clearErr();
+  inner.innerHTML = `<div class="chat-head"><div class="head-face">🔎</div><div><h2>Root cause · ${esc(secLabel)}</h2><div class="sub">connecting what ${vs.length} ${vs.length>1?'people':'person'} told you</div></div></div>`;
+  const target = bubble("assistant","Diagnosis","🔎");
+  updateComposer(); $("#send").disabled=true;
+  let notes = `Notes from my walk through the ${activeSection==="pipe"?"PIPE SHOP":"STRUCTURAL shop (Building 20)"}. Each station is one person I interviewed.\n\n`;
+  vs.forEach(s=>{ notes += `## ${s.role} — ${s.who}\n`; (convos[s.id]||[]).forEach(m=>{ notes += (m.role==="user"?"Me: ":NAME(s)+": ")+m.content+"\n"; }); notes += "\n"; });
+  notes += `\nPeople I did NOT get to: ${inSec.filter(s=>!visited(s.id)).map(s=>s.role).join(", ")||"none"}.\n\nWork out where the flow is really breaking and the most likely root cause(s). Trace the threads across what people said.`;
+  const analyst = activeSection==="pipe" ? ANALYST_PIPE : ANALYST_STRUCT;
+  streaming=true; updateComposer();
+  try{ const acc = await callClaude(analyst, [{role:"user",content:notes}], target, 2048); if(voiceOn) speak(acc, "_analyst"); }
+  catch(err){ target.closest(".msg").remove(); showErr(err.message||String(err)); }
+  finally{ streaming=false; $("#send").disabled=false; updateComposer(); scrollDown(); }
+}
+
+/* ---------- read-aloud (a distinct human voice per character) ---------- */
+const VOICE_OK = ("speechSynthesis" in window) && (typeof SpeechSynthesisUtterance !== "undefined");
+let voiceOn = VOICE_OK && localStorage.getItem(LS.voice)==="1";
+const SEX = { cut:"m", profile:"f", bend:"m", dress:"m", robot:"m", smwp:"m", bulkhead:"f", deck:"f", unit:"f", plan:"f", eng:"m", design:"f", mfg:"f", supply:"f", quality:"m", train:"m",
+  pstore:"m", pcut:"m", pbend:"f", pflare:"m", pht:"f", pflush:"m", pgrind:"f", pfit:"f", pweld:"m", ptest:"m", ptrain:"f" };
+const FEMALE=/(female|samantha|karen|moira|tessa|fiona|serena|martha|kate|victoria|allison|ava|susan|zoe|zira|hazel|amelie|catherine|nicky|joana|luciana|sonia|libby|aria|jenny|michelle|emma|eva|clara|amber|ashley|nora|salli|joanna|kimberly)/i;
+const MALE=/(\bmale\b|daniel|arthur|oliver|alex|fred|aaron|david|george|mark|rishi|gordon|\blee\b|thomas|reed|guy|ryan|william|brian|eric|\btom\b|james|john|matthew|liam|joey|justin|kevin)/i;
+const BAD=/(espeak|e-speak|compact|pico|festival|robo|android speech|chromeos|chrome os)/i;
+const GOOD=/(natural|neural|enhanced|premium|siri|online|wavenet|studio)/i;
+let VOICES=[];
+function loadVoices(){ try{ const all=speechSynthesis.getVoices()||[]; const en=all.filter(v=>/^en\b/i.test(v.lang)); VOICES = en.length?en:all; }catch(e){ VOICES=[]; } }
+if(VOICE_OK){ loadVoices(); try{ speechSynthesis.addEventListener("voiceschanged", loadVoices); }catch(e){} }
+function rankVoice(v){ return GOOD.test(v.name)?0 : /(google|microsoft|apple)/i.test(v.name)?1 : (v.localService?2:3); }
+function voiceFor(id){
+  const sex = SEX[id]||"f";
+  const want = sex==="f"?FEMALE:MALE, other = sex==="f"?MALE:FEMALE;
+  let pool = VOICES.filter(v=>!BAD.test(v.name)); if(!pool.length) pool = VOICES;
+  let cands = pool.filter(v=>want.test(v.name));
+  if(!cands.length) cands = pool.filter(v=>!other.test(v.name));
+  if(!cands.length) cands = pool;
+  if(!cands.length) return null;
+  cands = cands.slice().sort((a,b)=>rankVoice(a)-rankVoice(b));   // best voices first
+  const same = STATIONS.filter(s=>(SEX[s.id]||"f")===sex).map(s=>s.id);
+  const idx = Math.max(0, same.indexOf(id));
+  return cands[idx % cands.length];
+}
+/* cloud voices (ElevenLabs): natural, per-character, bypass the browser's built-in-voice limit */
+const EL_MODEL = "eleven_flash_v2_5";
+const ELEVEN = {
+  cut:     "JBFqnCBsd6RMkjVDRZzb", // George — British, gruff (plate cutting)
+  profile: "pFZP5JQG7iQjIQuC4Bku", // Lily — British, warm (profile cutting)
+  bend:    "IKne3meq5aSn9XLyUdCD", // Charlie — Australian, casual (bending press)
+  dress:   "cjVigY5qzO86Huf0OWal", // Eric — down-to-earth male (dressing)
+  robot:   "N2lVS1w4EtoT3dr4eOWO", // Callum — hoarse (robot weld cell)
+  smwp:    "onwK4e9ZLuTAKqWW03F9", // Daniel — British, deep (portal lead)
+  bulkhead:"XrExE9yKIg1WjnnlVkGX", // Matilda — warm (bulkhead assembly)
+  deck:    "Xb7hH8MSUJpSbSDYk0k2", // Alice — British, confident (unit WS1)
+  unit:    "EXAVITQu4vr4xnSDxMaL", // Sarah — warm, clear (unit supervisor)
+  plan:    "FGY2WhTYpPnrIDTdsKH5", // Laura — warm, upbeat (planning)
+  eng:     "iP95p4xoKVk53GoZ742N", // Chris — even, matter-of-fact (nesting)
+  design:  "cgSgspJ2msm6clMCkdW9", // Jessica — clear, thoughtful (design)
+  mfg:     "SAz9YHcvj6GT2YYXdXww", // River — calm, considered (mfg engineering)
+  supply:  "XB0fDUnXU5powFXDhCwa", // Charlotte — warm (supply chain)
+  quality: "CwhRBWXzGAHq8TQ4Fs17", // Roger — measured, assured (quality)
+  train:   "bIHbv24MWmeRgasZH58o", // Will (structural trade training)
+  pstore:  "JBFqnCBsd6RMkjVDRZzb", // George (pipe store)
+  pcut:    "TX3LPaxmHKxFdv7VOQHJ", // Liam (pipe cutting)
+  pbend:   "pFZP5JQG7iQjIQuC4Bku", // Lily (pipe bending)
+  pflare:  "IKne3meq5aSn9XLyUdCD", // Charlie (pipe flaring)
+  pht:     "Xb7hH8MSUJpSbSDYk0k2", // Alice (heat treatment)
+  pflush:  "N2lVS1w4EtoT3dr4eOWO", // Callum (pipe flushing)
+  pgrind:  "XrExE9yKIg1WjnnlVkGX", // Matilda (pipe grinding)
+  pfit:    "9BWtsMINqrJLrRacOk9x", // Aria (pipe fit-up)
+  pweld:   "bIHbv24MWmeRgasZH58o", // Will (pipe welder)
+  ptest:   "pqHfZKP75CvOlQylNhV4", // Bill (test & NDT)
+  ptrain:  "EXAVITQu4vr4xnSDxMaL", // Sarah (pipe trade training)
+  _analyst:"nPczCjzI2devNBz1zQrb"  // Brian — deep narrator (the diagnosis)
+};
+const audioEl = new Audio(); audioEl.playsInline = true;
+let lastAudioUrl = null;
+/* Speak the headline, not the whole essay — long text can crash a phone browser
+   and burns cloud-voice credits. Trim to a sentence boundary under the cap. */
+const SPEAK_CAP = 650;
+function forSpeech(text){
+  let t = stripMd(text);
+  if(t.length <= SPEAK_CAP) return t;
+  let cut = t.slice(0, SPEAK_CAP);
+  const p = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if(p > 200) cut = cut.slice(0, p+1);
+  return cut.trim() + " …";
+}
+function unlockAudio(){ try{ audioEl.src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="; const p=audioEl.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+function stopSpeak(){ try{ audioEl.pause(); }catch(e){} if(lastAudioUrl){ try{ URL.revokeObjectURL(lastAudioUrl); }catch(e){} lastAudioUrl=null; } if(VOICE_OK){ try{ speechSynthesis.cancel(); }catch(e){} } }
+async function elevenSpeak(text, id){
+  const vid = ELEVEN[id] || ELEVEN._analyst;
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
+    method:"POST",
+    headers:{ "xi-api-key":elevenKey, "content-type":"application/json", "accept":"audio/mpeg" },
+    body: JSON.stringify({ text: forSpeech(text), model_id: EL_MODEL, voice_settings:{ stability:0.45, similarity_boost:0.8, style:0.1, use_speaker_boost:true } })
+  });
+  if(!res.ok){ let m=""; try{ const j=await res.json(); m=(j&&(j.detail&&(j.detail.message||j.detail)||j.message))||""; }catch(e){} throw new Error(String(m||("error "+res.status))); }
+  const buf = await res.arrayBuffer();
+  const url = URL.createObjectURL(new Blob([buf], {type:"audio/mpeg"}));
+  lastAudioUrl = url;
+  audioEl.src = url; audioEl.onended = ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} if(lastAudioUrl===url) lastAudioUrl=null; };
+  await audioEl.play();
+}
+function deviceSpeak(text, id){
+  if(!VOICE_OK||!text) return;
+  try{
+    if(!VOICES.length) loadVoices();          // refresh right before speaking (good voices load late)
+    speechSynthesis.cancel();
+    try{ speechSynthesis.resume(); }catch(e){}
+    const v = id ? voiceFor(id) : null;
+    const sex = id ? (SEX[id]||"f") : null;
+    const h = id ? [...id].reduce((a,c)=>a+c.charCodeAt(0),0) : 0;
+    const bias = sex==="f" ? 0.10 : sex==="m" ? -0.12 : 0;
+    const pitch = Math.max(0.6, Math.min(1.5, 1 + bias + ((h%5)-2)/40));
+    const rate = 0.97 + (h%4)/60;
+    const chunks=[];
+    forSpeech(text).split(/(?:\. |\n)/).forEach(s=>{ s=s.trim(); if(s && chunks.length<12) chunks.push(s.length>220?s.slice(0,220):s); });
+    chunks.forEach(c=>{ const u=new SpeechSynthesisUtterance(c); if(v){ u.voice=v; u.lang=v.lang; } u.pitch=pitch; u.rate=rate; speechSynthesis.speak(u); });
+  }catch(e){}
+}
+function speak(text, id){
+  if(!text) return;
+  stopSpeak();
+  if(elevenKey){ elevenSpeak(text, id).catch(err=>{ toast("Cloud voice issue: "+(err.message||"failed")+" — using the phone voice."); deviceSpeak(text, id); }); return; }
+  deviceSpeak(text, id);
+}
+function speakSample(){ speak("Voice on. Tap a person, and they'll answer in their own voice.", "unit"); }
+function updateVoiceBtn(){ const b=$("#voiceBtn"); b.textContent=voiceOn?"🔊 Voice":"🔇 Voice"; b.classList.toggle("on",voiceOn); }
+
+/* ---------- speak-to-type (best effort) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, recording=false;
+function setupMic(){
+  if(!SR) return;
+  $("#micBtn").classList.add("show");
+  $("#micBtn").onclick = ()=>{
+    if(streaming) return;
+    if(recording){ try{ rec.stop(); }catch(e){} return; }
+    try{
+      rec = new SR(); rec.lang="en-GB"; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = e=>{ const t=e.results[0][0].transcript; $("#input").value=t; autosize(); };
+      rec.onerror = e=>{ toast(e.error==="not-allowed" ? "Microphone blocked. Tip: use your keyboard's mic button instead." : "Voice input isn't available here — use your keyboard's mic button."); };
+      rec.onend = ()=>{ recording=false; $("#micBtn").classList.remove("rec"); const v=$("#input").value.trim(); if(v) send(); };
+      rec.start(); recording=true; $("#micBtn").classList.add("rec");
+    }catch(e){ toast("Voice input isn't available here — use your keyboard's mic button."); }
+  };
+}
+
+/* ---------- composer ---------- */
+const input=$("#input");
+function autosize(){ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,160)+"px"; }
+input.addEventListener("input", autosize);
+input.addEventListener("keydown", e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } });
+$("#send").onclick=send;
+$("#rcBar").onclick=rootCause;
+
+/* ---------- settings / theme / reset / voice ---------- */
+const backdrop=$("#backdrop");
+function openSettings(){ $("#keyInput").value=apiKey; $("#modelSel").value=model; $("#elevenInput").value=elevenKey; backdrop.classList.add("show"); $("#keyInput").focus(); }
+$("#setBtn").onclick=openSettings;
+$("#setCancel").onclick=()=>backdrop.classList.remove("show");
+backdrop.onclick=e=>{ if(e.target===backdrop) backdrop.classList.remove("show"); };
+$("#setSave").onclick=()=>{
+  apiKey=$("#keyInput").value.trim(); model=$("#modelSel").value; elevenKey=$("#elevenInput").value.trim();
+  if(apiKey) localStorage.setItem(LS.key,apiKey); else localStorage.removeItem(LS.key);
+  if(elevenKey) localStorage.setItem(LS.eleven,elevenKey); else localStorage.removeItem(LS.eleven);
+  localStorage.setItem(LS.model,model); backdrop.classList.remove("show"); input.focus();
+};
+$("#resetBtn").onclick=()=>{ if(confirm("Clear every conversation and start the walk fresh?")){ convos={}; saveConvos(); stopSpeak(); renderSectionTabs(); renderStrip(); renderWelcome(); } };
+
+const themeBtn=$("#themeBtn");
+let theme=localStorage.getItem(LS.theme)||"auto";
+function applyTheme(){ if(theme==="auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme",theme); }
+themeBtn.onclick=()=>{ theme=theme==="auto"?"light":theme==="light"?"dark":"auto"; localStorage.setItem(LS.theme,theme); applyTheme(); };
+applyTheme();
+
+if(VOICE_OK){ $("#voiceBtn").style.display=""; updateVoiceBtn();
+  $("#voiceBtn").onclick=()=>{ voiceOn=!voiceOn; localStorage.setItem(LS.voice,voiceOn?"1":"0"); updateVoiceBtn(); if(!voiceOn) stopSpeak(); else { unlockAudio(); speakSample(); toast(elevenKey?"Voice on — natural voices active.":"Voice on — you should hear a line now. If not, turn your ringer up."); } };
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+
+window.addEventListener("pagehide", stopSpeak);
+
+/* ---------- boot ---------- */
+renderSectionTabs(); renderStrip(); renderWelcome(); autosize(); setupMic();
+if(!apiKey) setTimeout(openSettings, 400);
+</script>
+</body>
+</html>
