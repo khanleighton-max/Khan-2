@@ -565,19 +565,32 @@ const ELEVEN = {
   _analyst:"nPczCjzI2devNBz1zQrb" // Brian — deep narrator (the diagnosis)
 };
 const audioEl = new Audio(); audioEl.playsInline = true;
+let lastAudioUrl = null;
+/* Speak the headline, not the whole essay — long text can crash a phone browser
+   and burns cloud-voice credits. Trim to a sentence boundary under the cap. */
+const SPEAK_CAP = 650;
+function forSpeech(text){
+  let t = stripMd(text);
+  if(t.length <= SPEAK_CAP) return t;
+  let cut = t.slice(0, SPEAK_CAP);
+  const p = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if(p > 200) cut = cut.slice(0, p+1);
+  return cut.trim() + " …";
+}
 function unlockAudio(){ try{ audioEl.src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="; const p=audioEl.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
-function stopSpeak(){ try{ audioEl.pause(); }catch(e){} if(VOICE_OK){ try{ speechSynthesis.cancel(); }catch(e){} } }
+function stopSpeak(){ try{ audioEl.pause(); }catch(e){} if(lastAudioUrl){ try{ URL.revokeObjectURL(lastAudioUrl); }catch(e){} lastAudioUrl=null; } if(VOICE_OK){ try{ speechSynthesis.cancel(); }catch(e){} } }
 async function elevenSpeak(text, id){
   const vid = ELEVEN[id] || ELEVEN._analyst;
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
     method:"POST",
     headers:{ "xi-api-key":elevenKey, "content-type":"application/json", "accept":"audio/mpeg" },
-    body: JSON.stringify({ text: stripMd(text), model_id: EL_MODEL, voice_settings:{ stability:0.45, similarity_boost:0.8, style:0.1, use_speaker_boost:true } })
+    body: JSON.stringify({ text: forSpeech(text), model_id: EL_MODEL, voice_settings:{ stability:0.45, similarity_boost:0.8, style:0.1, use_speaker_boost:true } })
   });
   if(!res.ok){ let m=""; try{ const j=await res.json(); m=(j&&(j.detail&&(j.detail.message||j.detail)||j.message))||""; }catch(e){} throw new Error(String(m||("error "+res.status))); }
   const buf = await res.arrayBuffer();
   const url = URL.createObjectURL(new Blob([buf], {type:"audio/mpeg"}));
-  audioEl.src = url; audioEl.onended = ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} };
+  lastAudioUrl = url;
+  audioEl.src = url; audioEl.onended = ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} if(lastAudioUrl===url) lastAudioUrl=null; };
   await audioEl.play();
 }
 function deviceSpeak(text, id){
@@ -593,7 +606,7 @@ function deviceSpeak(text, id){
     const pitch = Math.max(0.6, Math.min(1.5, 1 + bias + ((h%5)-2)/40));
     const rate = 0.97 + (h%4)/60;
     const chunks=[];
-    stripMd(text).split(/(?:\. |\n)/).forEach(s=>{ s=s.trim(); if(s) chunks.push(s.length>220?s.slice(0,220):s); });
+    forSpeech(text).split(/(?:\. |\n)/).forEach(s=>{ s=s.trim(); if(s && chunks.length<12) chunks.push(s.length>220?s.slice(0,220):s); });
     chunks.forEach(c=>{ const u=new SpeechSynthesisUtterance(c); if(v){ u.voice=v; u.lang=v.lang; } u.pitch=pitch; u.rate=rate; speechSynthesis.speak(u); });
   }catch(e){}
 }
