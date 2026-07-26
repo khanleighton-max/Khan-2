@@ -73,6 +73,15 @@
   .chat-head h2{margin:0;font-size:1.05rem;}
   .chat-head .sub{font-size:.8rem;color:var(--muted);}
 
+  /* station scene (blueprint line-art of the machine + the person) */
+  .scene{width:100%;max-width:520px;height:auto;display:block;margin:2px auto 14px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));}
+  .scene .k{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .scene .t{fill:none;stroke:var(--accent);stroke-width:1;opacity:.42;stroke-linecap:round;stroke-linejoin:round;}
+  .scene .f{fill:var(--accent-bg);stroke:var(--accent);stroke-width:1.5;stroke-linejoin:round;}
+  .scene .pf{fill:var(--accent);}
+  .scene .sp{stroke:var(--warn);stroke-width:2;stroke-linecap:round;}
+  .scene .cap{fill:var(--muted);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;}
+
   .msg{display:flex;gap:11px;margin-bottom:18px;}
   .avatar{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:20px;line-height:1;}
   .msg.user .avatar{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line);font-family:var(--mono);font-size:.62rem;font-weight:700;}
@@ -273,6 +282,97 @@ function md(src){
 }
 function stripMd(t){ return String(t).replace(/[#*`>_-]+/g," ").replace(/\s+/g," ").trim(); }
 
+/* ---------- station artwork (blueprint scenes: the machine + the person) ---------- */
+function worker(x,y,s){ s=s||1; return `<g transform="translate(${x},${y}) scale(${s})">
+  <ellipse class="pf" cx="0" cy="-53" rx="11" ry="7"/>
+  <rect class="pf" x="-13" y="-50" width="26" height="4" rx="2"/>
+  <circle class="pf" cx="0" cy="-39" r="7"/>
+  <path class="pf" d="M-9,-14 Q0,-20 9,-14 L8,-30 -8,-30 Z"/>
+  <path class="pf" d="M-8,-14 L-7,0 -2,0 -1,-14 Z"/>
+  <path class="pf" d="M8,-14 L7,0 2,0 1,-14 Z"/>
+</g>`; }
+
+const SCENE = {
+  cut:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="34" y1="34" x2="300" y2="34"/>
+    <line class="k" x1="44" y1="34" x2="44" y2="118"/>
+    <line class="k" x1="290" y1="34" x2="290" y2="118"/>
+    <rect class="f" x="150" y="24" width="30" height="18" rx="2"/>
+    <line class="k" x1="165" y1="42" x2="165" y2="102"/>
+    <g class="sp"><line x1="165" y1="103" x2="157" y2="94"/><line x1="165" y1="103" x2="173" y2="94"/><line x1="165" y1="103" x2="165" y2="92"/></g>
+    <rect class="f" x="46" y="104" width="214" height="14" rx="1"/>
+    <rect class="t" x="70" y="107" width="28" height="8"/>
+    <rect class="t" x="200" y="107" width="20" height="8"/>
+    ${worker(360,118,.95)}`,
+  parts:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="k" x="44" y="46" width="150" height="72"/>
+    <line class="k" x1="44" y1="70" x2="194" y2="70"/>
+    <line class="k" x1="44" y1="94" x2="194" y2="94"/>
+    <line class="k" x1="94" y1="46" x2="94" y2="118"/>
+    <line class="k" x1="144" y1="46" x2="144" y2="118"/>
+    <circle class="f" cx="66" cy="60" r="6"/><rect class="f" x="110" y="54" width="14" height="12"/><path class="f" d="M162,66 l8,-14 8,14 z"/>
+    <rect class="f" x="58" y="80" width="16" height="10"/><circle class="f" cx="120" cy="84" r="6"/><rect class="f" x="158" y="80" width="16" height="10"/>
+    <circle class="f" cx="66" cy="108" r="6"/><path class="f" d="M112,114 l8,-14 8,14 z"/><rect class="f" x="158" y="104" width="16" height="10"/>
+    <rect class="f" x="228" y="86" width="46" height="26" rx="2"/><circle class="k" cx="238" cy="118" r="4"/><circle class="k" cx="264" cy="118" r="4"/>
+    <path class="t" d="M206,64 l70,0 m-10,-6 l10,6 -10,6"/>
+    ${worker(360,118,.95)}`,
+  store:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="40" y="104" width="120" height="6"/>
+    <rect class="f" x="44" y="96" width="116" height="6"/>
+    <rect class="f" x="48" y="88" width="112" height="6"/>
+    <rect class="f" x="52" y="80" width="108" height="6"/>
+    <g transform="translate(186,0)"><path class="f" d="M0,118 l18,-56 8,0 -18,56 z"/><path class="f" d="M16,118 l18,-56 8,0 -18,56 z"/><path class="f" d="M32,118 l18,-56 8,0 -18,56 z"/></g>
+    <rect class="k" x="272" y="60" width="70" height="58"/>
+    <line class="k" x1="272" y1="88" x2="342" y2="88"/>
+    <rect class="f" x="278" y="66" width="26" height="16"/><rect class="f" x="310" y="66" width="26" height="16"/>
+    <rect class="f" x="278" y="94" width="58" height="16"/>
+    ${worker(380,118,.78)}`,
+  panel:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="72" y="76" width="246" height="34" rx="1"/>
+    <line class="k" x1="72" y1="93" x2="318" y2="93" stroke-dasharray="7 5"/>
+    <line class="t" x1="122" y1="76" x2="122" y2="110"/><line class="t" x1="192" y1="76" x2="192" y2="110"/><line class="t" x1="262" y1="76" x2="262" y2="110"/>
+    <g class="sp"><line x1="72" y1="93" x2="62" y2="84"/><line x1="72" y1="93" x2="62" y2="101"/><line x1="72" y1="93" x2="57" y2="92"/></g>
+    ${worker(44,118,.95)}
+    <line class="k" x1="52" y1="86" x2="70" y2="92"/>`,
+  stiff:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <line class="k" x1="34" y1="40" x2="306" y2="40"/>
+    <line class="k" x1="46" y1="40" x2="46" y2="118"/>
+    <line class="k" x1="294" y1="40" x2="294" y2="118"/>
+    <rect class="f" x="156" y="30" width="30" height="16" rx="2"/><line class="k" x1="171" y1="46" x2="171" y2="64"/>
+    <rect class="f" x="60" y="106" width="220" height="12" rx="1"/>
+    <g class="k"><path d="M96,106 l0,-40 m-12,0 l24,0"/><path d="M140,106 l0,-40 m-12,0 l24,0"/><path d="M184,106 l0,-40 m-12,0 l24,0"/><path d="M228,106 l0,-40 m-12,0 l24,0"/></g>
+    ${worker(360,118,.95)}`,
+  sub:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <path class="f" d="M120,60 L210,40 L300,60 L210,80 Z"/>
+    <path class="f" d="M120,60 L120,104 L210,124 L210,80 Z"/>
+    <path class="f" d="M300,60 L300,104 L210,124 L210,80 Z" opacity=".85"/>
+    <g class="t"><line x1="147" y1="72" x2="147" y2="114"/><line x1="174" y1="78" x2="174" y2="120"/><line x1="210" y1="80" x2="210" y2="124"/></g>
+    <g class="t"><line x1="246" y1="78" x2="246" y2="120"/><line x1="273" y1="72" x2="273" y2="114"/></g>
+    ${worker(360,118,.95)}`,
+  unit:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <path class="t" d="M250,52 L392,52 L382,66 L300,66 L292,76 L268,76 L260,66 L250,66 Z"/>
+    <rect class="t" x="300" y="40" width="30" height="12"/>
+    <rect class="f" x="66" y="44" width="92" height="74"/>
+    <g class="t"><line x1="90" y1="44" x2="90" y2="118"/><line x1="114" y1="44" x2="114" y2="118"/><line x1="138" y1="44" x2="138" y2="118"/></g>
+    <rect class="k" x="100" y="86" width="24" height="32"/>
+    <g class="k"><rect x="188" y="130" width="20" height="12" rx="1"/><rect x="222" y="130" width="20" height="12" rx="1"/><rect x="256" y="130" width="20" height="12" rx="1" fill="var(--accent-bg)"/><rect x="290" y="130" width="20" height="12" rx="1"/></g>
+    <g class="t"><path d="M210,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M244,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M278,136 l10,0 m-4,-4 l4,4 -4,4"/></g>
+    ${worker(360,118,.95)}
+    <rect class="pf" x="344" y="96" width="12" height="15" rx="1"/>`
+};
+const CAP = { cut:"PLATE & PROFILE CUTTING", parts:"SMALL PARTS · SORT & ROUTE", store:"LAYDOWN & STORAGE HALLS", panel:"PANEL FABRICATION", stiff:"STIFFENER MOUNTING · PORTAL", sub:"SUB-ASSEMBLY & DRESSING", unit:"UNIT LINE · PULSE BEAT" };
+function sceneSVG(id){
+  const art = SCENE[id]; if(!art) return "";
+  return `<svg class="scene" viewBox="0 0 420 150" role="img" aria-label="${esc(CAP[id]||"")}" preserveAspectRatio="xMidYMid meet"><text class="cap" x="14" y="22">${esc(CAP[id]||"")}</text>${art}</svg>`;
+}
+
 /* ---------- render strip ---------- */
 function renderStrip(){
   $("#strip").innerHTML = STATIONS.map((s,idx)=>`
@@ -320,7 +420,7 @@ function openStation(id){
   stopSpeak();
   active=id; mode="chat"; renderStrip();
   const st=stById(id);
-  inner.innerHTML = `<div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
+  inner.innerHTML = `${sceneSVG(id)}<div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
   const conv = convos[id]||[];
   conv.forEach(m=> bubble(m.role, m.role==="assistant"?NAME(st):"You", st.emoji).innerHTML = md(m.content));
   if(!conv.length){
