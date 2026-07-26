@@ -425,27 +425,42 @@ async function rootCause(){
 const VOICE_OK = ("speechSynthesis" in window) && (typeof SpeechSynthesisUtterance !== "undefined");
 let voiceOn = VOICE_OK && localStorage.getItem(LS.voice)==="1";
 const SEX = { cut:"m", parts:"f", store:"m", panel:"m", stiff:"m", sub:"f", unit:"f" };
-const FEMALE=/(female|samantha|karen|moira|tessa|fiona|serena|martha|kate|victoria|allison|ava|susan|zoe|zira|hazel|amelie|catherine|nicky|joana|luciana|sonia|libby|aria|jenny|michelle)/i;
-const MALE=/(\bmale\b|daniel|arthur|oliver|alex|fred|aaron|david|george|mark|rishi|gordon|\blee\b|thomas|reed|guy|ryan|william|brian|eric|tom\b)/i;
+const FEMALE=/(female|samantha|karen|moira|tessa|fiona|serena|martha|kate|victoria|allison|ava|susan|zoe|zira|hazel|amelie|catherine|nicky|joana|luciana|sonia|libby|aria|jenny|michelle|emma|eva|clara|amber|ashley|nora|salli|joanna|kimberly)/i;
+const MALE=/(\bmale\b|daniel|arthur|oliver|alex|fred|aaron|david|george|mark|rishi|gordon|\blee\b|thomas|reed|guy|ryan|william|brian|eric|\btom\b|james|john|matthew|liam|joey|justin|kevin)/i;
+const BAD=/(espeak|e-speak|compact|pico|festival|robo|android speech|chromeos|chrome os)/i;
+const GOOD=/(natural|neural|enhanced|premium|siri|online|wavenet|studio)/i;
 let VOICES=[];
 function loadVoices(){ try{ const all=speechSynthesis.getVoices()||[]; const en=all.filter(v=>/^en\b/i.test(v.lang)); VOICES = en.length?en:all; }catch(e){ VOICES=[]; } }
 if(VOICE_OK){ loadVoices(); try{ speechSynthesis.addEventListener("voiceschanged", loadVoices); }catch(e){} }
+function rankVoice(v){ return GOOD.test(v.name)?0 : /(google|microsoft|apple)/i.test(v.name)?1 : (v.localService?2:3); }
 function voiceFor(id){
   const sex = SEX[id]||"f";
   const want = sex==="f"?FEMALE:MALE, other = sex==="f"?MALE:FEMALE;
-  let cands = VOICES.filter(v=>want.test(v.name));
-  if(!cands.length) cands = VOICES.filter(v=>!other.test(v.name));
-  if(!cands.length) cands = VOICES;
+  let pool = VOICES.filter(v=>!BAD.test(v.name)); if(!pool.length) pool = VOICES;
+  let cands = pool.filter(v=>want.test(v.name));
+  if(!cands.length) cands = pool.filter(v=>!other.test(v.name));
+  if(!cands.length) cands = pool;
   if(!cands.length) return null;
+  cands = cands.slice().sort((a,b)=>rankVoice(a)-rankVoice(b));   // best voices first
   const same = STATIONS.filter(s=>(SEX[s.id]||"f")===sex).map(s=>s.id);
   const idx = Math.max(0, same.indexOf(id));
   return cands[idx % cands.length];
 }
 function stopSpeak(){ if(VOICE_OK) speechSynthesis.cancel(); }
+function speakSample(){                       // spoken inside a tap → unlocks audio on iOS, and confirms it works
+  if(!VOICE_OK) return;
+  loadVoices();
+  try{ speechSynthesis.cancel(); speechSynthesis.resume(); }catch(e){}
+  const u = new SpeechSynthesisUtterance("Voice on. Tap a person, and they'll answer in their own voice.");
+  const v = voiceFor("unit"); if(v){ u.voice=v; u.lang=v.lang; } u.pitch=1.06; u.rate=1;
+  try{ speechSynthesis.speak(u); }catch(e){}
+}
 function speak(text, id){
   if(!VOICE_OK||!text) return;
   try{
+    if(!VOICES.length) loadVoices();          // refresh right before speaking (good voices load late)
     speechSynthesis.cancel();
+    try{ speechSynthesis.resume(); }catch(e){}
     const v = id ? voiceFor(id) : null;
     const sex = id ? (SEX[id]||"f") : null;
     const h = id ? [...id].reduce((a,c)=>a+c.charCodeAt(0),0) : 0;
@@ -506,7 +521,7 @@ themeBtn.onclick=()=>{ theme=theme==="auto"?"light":theme==="light"?"dark":"auto
 applyTheme();
 
 if(VOICE_OK){ $("#voiceBtn").style.display=""; updateVoiceBtn();
-  $("#voiceBtn").onclick=()=>{ voiceOn=!voiceOn; localStorage.setItem(LS.voice,voiceOn?"1":"0"); updateVoiceBtn(); if(!voiceOn) stopSpeak(); else toast("The people will now read their answers aloud."); };
+  $("#voiceBtn").onclick=()=>{ voiceOn=!voiceOn; localStorage.setItem(LS.voice,voiceOn?"1":"0"); updateVoiceBtn(); if(!voiceOn) stopSpeak(); else { speakSample(); toast("Voice on — you should hear a line now. If not, turn your ringer up."); } };
 }
 
 /* ---------- toast ---------- */
