@@ -1,37 +1,37 @@
 PUT YOUR STATION PHOTOS IN THIS FOLDER
 ======================================
 
-Walk the Line will show a real photo at the top of each person's chat if you
-put one here. If a photo is missing, it just shows the built-in drawing instead
-— so you can add them one at a time, in any order, and nothing breaks.
+Walk the Line shows a real photo at the top of each person's chat if you put
+one here. If a photo is missing, it shows the built-in drawing instead — so
+you can add them one at a time, in any order, and nothing breaks.
+
+The app matches your real station names, so the photos you already have work
+as-is. It's forgiving about capital letters and spaces.
+
+FILE NAMES IT LOOKS FOR (any of these per station; .png / .jpg / .webp all OK)
+-----------------------------------------------------------------------------
+  Cutting                     -> Plate cutting (Dave)
+  Profile & T                 -> Profile & T-bar cutting (Priya)
+  Profile Bending             -> Profile bending press (Tom)
+  Dressing                    -> Dressing / central hall (Ben)
+  Plate Robot Welder          -> Plate robot welder (Sam)
+  SMWP                        -> Stiffener mounting portal (Jack)
+  Bulkhead Fab                -> Bulkhead fabrication (Maria)
+  Unit Line Deck Plate 1      -> Unit line, deck plate WS1 (Nadia)
+  Unit Line                   -> Unit line WS 2-5 (Kate)
 
 HOW
 ---
-1. Get a photo for a station (a real shop photo, or an AI-generated one like
-   your collage). Landscape works best — roughly twice as wide as it is tall.
-2. Name the file exactly after the station, all lowercase:
-
-       cut.jpg     -> Cutting (Dave)
-       parts.jpg   -> Small parts (Priya)
-       store.jpg   -> Laydown / storage (Tom)
-       panel.jpg   -> Panel fab (Sam)
-       stiff.jpg   -> Stiffener mounting (Jack)
-       sub.jpg     -> Sub-assembly (Maria)
-       unit.jpg    -> Unit line (Nadia)
-
-   .jpg, .jpeg, .png and .webp all work — just keep the name (cut, parts, …)
-   the same.
-
+1. Get a photo for a station. Landscape works best — roughly twice as wide as
+   it is tall.
+2. Name it as above (a real shop photo, or an AI-generated one like your
+   collage). The name is what matters, not the picture.
 3. Put the file in this "line-images" folder, next to index.html.
-   If you're on GitHub: open this folder, "Add file" -> "Upload files",
-   drop the photo in, commit.
-
+   On GitHub: open this folder, "Add file" -> "Upload files", drop it in, commit.
 4. Reopen the app and tap that person — you'll see the photo.
 
 TIPS
 ----
-- Keep each photo under ~500 KB so the app stays quick to load. Most phone
-  photos are fine once resized; if one is huge, shrink it first.
-- Don't upload anything commercially sensitive if the repo is public. If in
-  doubt, keep the repo private, or use generic/AI images.
+- Keep each photo under ~500 KB so the app stays quick. Resize big phone photos.
+- Don't upload anything commercially sensitive if the repo is public.
 - To go back to the drawing for a station, just delete its photo here.

@@ -207,23 +207,30 @@ const $ = s => document.querySelector(s);
 const LS = { key:"khan-mat-anthropic-key", model:"khan-mat-model", theme:"khan-mat-theme", convos:"khan-mat-linewalk", voice:"khan-mat-voice", eleven:"khan-mat-eleven" };
 
 /* ---------- the line ---------- */
-const SHARED = `The line builds Hunter-class frigate units from raw steel plate: cutting, small-parts sorting, laydown/storage, panel fabrication, stiffener mounting on a welding portal, sub-assembly and dressing, then a five-station unit line running on a fixed pulse. High-mix, one-of-a-kind — nothing is made twice. What's really going on right now (weave it in naturally as the conversation earns it, never recite it as a list): about three months ago the steel-plate supplier changed and the new plate is more variable — more mill scale, not always flat — so there's more grinding and the odd weld defect turning up downstream. Work is released to the floor by the date it is CUT, not when it's needed, so material is prepared far too early; the storage halls are jammed and space, not machine capacity, is what actually stops work. Stiffener mounting has taken on several new starters still learning the job. And everyone is under pressure to keep the unit line moving on its pulse.`;
+const SHARED = `The line builds Hunter-class frigate units from raw steel plate: plate cutting, profile & T-bar cutting, profile bending, dressing in a central hall, robot plate welding into panels, stiffener mounting on a welding portal (SMWP), bulkhead fabrication, then a five-station unit line running on a fixed pulse (deck plate first, then bulkheads stood up and welded in). High-mix, one-of-a-kind — nothing is made twice. What's really going on right now (weave it in naturally as the conversation earns it, never recite it as a list): about three months ago the steel-plate supplier changed and the new plate is more variable — more mill scale, not always flat — so there's more grinding and the odd weld defect turning up downstream. Work is released to the floor by the date it is CUT, not when it's needed, so material is prepared far too early; the central hall and laydown are jammed and space, not machine capacity, is what actually stops work. Stiffener mounting has taken on several new starters still learning the job. And everyone is under pressure to keep the unit line moving on its pulse.`;
 
+/* Each station's `img` lists the photo file names it will accept from the
+   line-images folder (Khan's real station names first), so uploads map with
+   no renaming. */
 const STATIONS = [
-  { id:"cut",   emoji:"👷‍♂️", role:"Cutting",           who:"Dave · cutting lead",
-    focus:`You cut plate and profile — the gate to the whole line. You're measured on tonnes cut per week, so you keep cutting; where it goes afterwards isn't really your problem. You release to the cut-programme dates. Lately you've noticed the new plate carries more scale than it used to.` },
-  { id:"parts", emoji:"👩‍🏭", role:"Small parts",       who:"Priya · sorting & routing",
-    focus:`Small parts come off the beds and you sort, contain and route them. Your headache is parts going missing between here and where they're used — completion gets signed off by the batch, but parts are consumed one at a time, so the paperwork says done while people can't find the actual bits. A lot of your day is chasing.` },
-  { id:"store", emoji:"🧑‍🏭", role:"Laydown / storage", who:"Tom · laydown coordinator",
-    focus:`You run the storage halls. They're full — you're playing Tetris every day, and when there's no room, work upstream simply has to stop. Things are cut so far ahead they sit for months. It's space, not machines, that stops this place.` },
-  { id:"panel", emoji:"👨‍🏭", role:"Panel fab",         who:"Sam · panel welder",
-    focus:`You fabricate and seam-weld panels. Lately you're grinding far more than usual — the plate isn't as flat and you're getting porosity in welds you didn't used to. It slows you right down. You reckon the material changed but nobody's said so officially.` },
-  { id:"stiff", emoji:"👷", role:"Stiffener mounting",who:"Jack · portal lead",
-    focus:`You mount bulkhead stiffeners on the welding portal. You've several new starters still building their skills. Under pulse-time pressure they rush, mistakes creep in, and rework bounces back to you. You blame the panels you're handed (not flat) and the time pressure. You're a pinch point and you feel it.` },
-  { id:"sub",   emoji:"👩‍🔧", role:"Sub-assembly",      who:"Maria · sub-assembly & dressing",
-    focus:`You build sub-assemblies from stiffened panels and dress them. You wait a lot on stiffener mounting, and quality problems from upstream land on you to fix. When things arrive late you're squeezed hard to keep the unit line fed.` },
-  { id:"unit",  emoji:"👩‍💼", role:"Unit line",         who:"Nadia · unit-line supervisor",
-    focus:`You run the five-station unit line on a fixed pulse — units moving station to station on the beat. Units reach you not quite ready: missing parts, bits needing rework. You're under real pressure to hold the beat, and you feel everything wrong upstream but can't see the cause from where you stand.` }
+  { id:"cut",     emoji:"👷‍♂️", role:"Plate cutting",         who:"Dave · plate cutting", img:["Cutting","cut"],
+    focus:`You run the CNC plate cutting — the gate to the whole line. You're measured on tonnes cut per week, so you keep cutting; where it goes afterwards isn't really your problem. You release to the cut-programme dates, so plate goes out by the date it's cut, not when anyone downstream needs it. Lately the new plate carries more scale than it used to.` },
+  { id:"profile", emoji:"👩‍🏭", role:"Profile & T-bar cutting", who:"Priya · profile cutting", img:["Profile & T","Profile and T","Profile T","profile"],
+    focus:`You cut structural profiles, T-bars and bulb bars. Like plate, they're cut to the programme date and pushed straight on, so a mountain of profiles and small parts builds up ahead of need. Your other headache is small parts going missing — completion gets signed off by the batch, but parts are consumed one at a time, so the paperwork says done while people can't find the actual bits. A lot of your day is chasing.` },
+  { id:"bend",    emoji:"🧑‍🏭", role:"Profile bending",        who:"Tom · bending press", img:["Profile BEnding","Profile Bending","bend"],
+    focus:`You run the profile bending press, curving frames and profiles to shape. There's one press, so people call you a bottleneck — but honestly you often bend whatever's in front of you to keep the press busy, not what's needed next, which just adds to the pile downstream. When the right profile isn't ready you wait; when the wrong ones are stacked up you bend ahead. You feel the pressure but you're not the real cap.` },
+  { id:"dress",   emoji:"👨‍🔧", role:"Dressing",              who:"Ben · dressing operator", img:["Dressing","dress"],
+    focus:`You dress steel in the central hall — grinding off scale, cleaning up edges and cut lines on profiles, T-bars and small parts. The problem is everything cutting produces gets pushed straight in here, so you dress it because it's sitting in front of you, not because anyone downstream has asked for it. You're flat out, but a lot of what you finish just sits. It waits so long it flashes up with surface rust, and then you dress it a second or third time — you've re-done some pieces more than twice. The hall's so packed with steel you can barely move through it safely, and when there's no room in here, work upstream has to stop. It's space, not machines, that caps this place.` },
+  { id:"robot",   emoji:"👨‍🏭", role:"Plate robot welder",     who:"Sam · robot weld cell", img:["Plate Robot Welder","Robot Welder","robot"],
+    focus:`You run the robot cell that welds plates into panels and seam-welds them. Lately you're grinding far more than usual and getting porosity in welds you didn't used to — the plate isn't as flat and carries more scale, so the robot doesn't get the clean, flat fit-up it needs. You reckon the material changed but nobody's said so officially. When fit-up is off you're babysitting the robot instead of it running clean.` },
+  { id:"smwp",    emoji:"👷", role:"Stiffener mounting (SMWP)", who:"Jack · portal lead", img:["SMWP","Stiffener Mounting Welder Portal","smwp","stiff"],
+    focus:`You mount stiffeners on the welding portal. You've several new starters still building their skills. Under pulse-time pressure they rush, mistakes creep in, and rework bounces back to you. You blame the panels you're handed (not flat) and the time pressure. You're a pinch point and you feel it.` },
+  { id:"bulkhead",emoji:"👩‍🔧", role:"Bulkhead fab",           who:"Maria · bulkhead assembly", img:["Bulkhead Fab","Bulkhead","bulkhead","sub"],
+    focus:`You build bulkheads from stiffened panels and dress them ready for the unit line. You wait a lot on stiffener mounting, and quality problems from upstream land on you to fix. Your assembly area is tight and cluttered too. When things arrive late you're squeezed hard to keep the unit line fed.` },
+  { id:"deck",    emoji:"👩‍💼", role:"Unit line — deck (WS1)",  who:"Nadia · unit line WS1", img:["Unit Line Deck Plate 1","Unit Line Deck Plate","Deck Plate","deck"],
+    focus:`You run the first unit-line station — the deck plate goes down and you fit carlings, transverse stiffeners and other structural members to start the unit. Trouble is units start here not quite ready: missing parts, bits needing rework from upstream. You're setting the beat for the whole unit line, so anything missing at the start ripples all the way down.` },
+  { id:"unit",    emoji:"👩‍🏭", role:"Unit line — WS 2–5",     who:"Kate · unit line supervisor", img:["Unit Line","unit"],
+    focus:`You run stations two to five of the unit line on a fixed pulse — units moving station to station on the beat, deck structure built up and bulkheads stood up and welded in, until it starts to resemble a compartment. Units reach you not quite ready: missing parts, bits needing rework. You're under real pressure to hold the beat, and you feel everything wrong upstream but can't see the cause from where you stand.` }
 ];
 const NAME = st => st.who.split(" · ")[0];
 const SUB  = st => st.who.split(" · ")[1] || "";
@@ -272,7 +279,9 @@ function nVisited(){ return STATIONS.filter(s=>visited(s.id)).length; }
 function md(src){
   const lines = esc(src).split("\n"); let html="",i=0;
   const inline = t => t.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>").replace(/`([^`]+)`/g,"<code>$1</code>");
-  while(i<lines.length){ let ln=lines[i];
+  const BLOCK = /^\s*(#{1,3}\s|[-*]\s|\d+[.)]\s|&gt;|-{3,}\s*$)/;   // real block starts only
+  let guard=0;
+  while(i<lines.length && guard++<50000){ let ln=lines[i];
     if(/^\s*###\s+/.test(ln)){ html+="<h3>"+inline(ln.replace(/^\s*###\s+/,""))+"</h3>"; i++; continue; }
     if(/^\s*##\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*##\s+/,""))+"</h2>"; i++; continue; }
     if(/^\s*#\s+/.test(ln)){ html+="<h2>"+inline(ln.replace(/^\s*#\s+/,""))+"</h2>"; i++; continue; }
@@ -281,7 +290,10 @@ function md(src){
     if(/^\s*[-*]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*[-*]\s+/,""))+"</li>"); i++; } html+="<ul>"+it.join("")+"</ul>"; continue; }
     if(/^\s*\d+[.)]\s+/.test(ln)){ let it=[]; while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){ it.push("<li>"+inline(lines[i].replace(/^\s*\d+[.)]\s+/,""))+"</li>"); i++; } html+="<ol>"+it.join("")+"</ol>"; continue; }
     if(/^\s*$/.test(ln)){ i++; continue; }
-    let p=[]; while(i<lines.length&&!/^\s*$/.test(lines[i])&&!/^\s*(#|-|\*|\d+[.)]|&gt;)/.test(lines[i])){ p.push(inline(lines[i])); i++; } html+="<p>"+p.join("<br>")+"</p>";
+    // paragraph — ALWAYS consume the current line first so i can never stall
+    let p=[inline(ln)]; i++;
+    while(i<lines.length && !/^\s*$/.test(lines[i]) && !BLOCK.test(lines[i])){ p.push(inline(lines[i])); i++; }
+    html+="<p>"+p.join("<br>")+"</p>";
   }
   return html;
 }
@@ -310,40 +322,48 @@ const SCENE = {
     <rect class="t" x="70" y="107" width="28" height="8"/>
     <rect class="t" x="200" y="107" width="20" height="8"/>
     ${worker(360,118,.95)}`,
-  parts:`
+  profile:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
-    <rect class="k" x="44" y="46" width="150" height="72"/>
-    <line class="k" x1="44" y1="70" x2="194" y2="70"/>
-    <line class="k" x1="44" y1="94" x2="194" y2="94"/>
-    <line class="k" x1="94" y1="46" x2="94" y2="118"/>
-    <line class="k" x1="144" y1="46" x2="144" y2="118"/>
-    <circle class="f" cx="66" cy="60" r="6"/><rect class="f" x="110" y="54" width="14" height="12"/><path class="f" d="M162,66 l8,-14 8,14 z"/>
-    <rect class="f" x="58" y="80" width="16" height="10"/><circle class="f" cx="120" cy="84" r="6"/><rect class="f" x="158" y="80" width="16" height="10"/>
-    <circle class="f" cx="66" cy="108" r="6"/><path class="f" d="M112,114 l8,-14 8,14 z"/><rect class="f" x="158" y="104" width="16" height="10"/>
-    <rect class="f" x="228" y="86" width="46" height="26" rx="2"/><circle class="k" cx="238" cy="118" r="4"/><circle class="k" cx="264" cy="118" r="4"/>
-    <path class="t" d="M206,64 l70,0 m-10,-6 l10,6 -10,6"/>
+    <line class="k" x1="40" y1="34" x2="300" y2="34"/>
+    <line class="k" x1="50" y1="34" x2="50" y2="70"/><line class="k" x1="290" y1="34" x2="290" y2="70"/>
+    <rect class="f" x="150" y="30" width="28" height="16" rx="2"/><line class="k" x1="164" y1="46" x2="164" y2="92"/>
+    <g class="sp"><line x1="164" y1="93" x2="157" y2="85"/><line x1="164" y1="93" x2="171" y2="85"/><line x1="164" y1="93" x2="164" y2="83"/></g>
+    <path class="f" d="M44,95 l210,0 0,6 -210,0 z"/><rect class="f" x="120" y="101" width="60" height="6"/>
+    <g class="k"><circle cx="60" cy="112" r="6"/><circle cx="96" cy="112" r="6"/><circle cx="132" cy="112" r="6"/><circle cx="168" cy="112" r="6"/><circle cx="204" cy="112" r="6"/><circle cx="240" cy="112" r="6"/></g>
     ${worker(360,118,.95)}`,
-  store:`
+  bend:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
-    <rect class="f" x="40" y="104" width="120" height="6"/>
-    <rect class="f" x="44" y="96" width="116" height="6"/>
-    <rect class="f" x="48" y="88" width="112" height="6"/>
-    <rect class="f" x="52" y="80" width="108" height="6"/>
-    <g transform="translate(186,0)"><path class="f" d="M0,118 l18,-56 8,0 -18,56 z"/><path class="f" d="M16,118 l18,-56 8,0 -18,56 z"/><path class="f" d="M32,118 l18,-56 8,0 -18,56 z"/></g>
-    <rect class="k" x="272" y="60" width="70" height="58"/>
-    <line class="k" x1="272" y1="88" x2="342" y2="88"/>
-    <rect class="f" x="278" y="66" width="26" height="16"/><rect class="f" x="310" y="66" width="26" height="16"/>
-    <rect class="f" x="278" y="94" width="58" height="16"/>
-    ${worker(380,118,.78)}`,
-  panel:`
+    <rect class="f" x="118" y="26" width="154" height="18" rx="1"/>
+    <line class="k" x1="132" y1="44" x2="132" y2="118"/><line class="k" x1="258" y1="44" x2="258" y2="118"/>
+    <rect class="f" x="174" y="44" width="42" height="38" rx="2"/>
+    <line class="k" x1="195" y1="26" x2="195" y2="44"/>
+    <path class="k" d="M150,106 q45,-36 90,0" fill="none" stroke-width="3"/>
+    <line class="k" x1="138" y1="112" x2="252" y2="112"/>
+    ${worker(352,118,.95)}`,
+  dress:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
-    <rect class="f" x="72" y="76" width="246" height="34" rx="1"/>
-    <line class="k" x1="72" y1="93" x2="318" y2="93" stroke-dasharray="7 5"/>
-    <line class="t" x1="122" y1="76" x2="122" y2="110"/><line class="t" x1="192" y1="76" x2="192" y2="110"/><line class="t" x1="262" y1="76" x2="262" y2="110"/>
-    <g class="sp"><line x1="72" y1="93" x2="62" y2="84"/><line x1="72" y1="93" x2="62" y2="101"/><line x1="72" y1="93" x2="57" y2="92"/></g>
-    ${worker(44,118,.95)}
-    <line class="k" x1="52" y1="86" x2="70" y2="92"/>`,
-  stiff:`
+    <rect class="f" x="26" y="110" width="98" height="7" rx="1"/>
+    <rect class="f" x="34" y="101" width="90" height="7" rx="1"/>
+    <rect class="f" x="24" y="92" width="94" height="7" rx="1"/>
+    <path class="k" d="M134,117 l0,-24 m0,24 l16,0"/>
+    <path class="k" d="M158,117 l0,-24 m-8,0 l16,0"/>
+    <rect class="t" x="60" y="115" width="9" height="7"/><circle class="t" cx="95" cy="118" r="4"/><rect class="t" x="108" y="114" width="8" height="8"/>
+    <line class="k" x1="192" y1="122" x2="202" y2="98"/><line class="k" x1="232" y1="122" x2="222" y2="98"/><line class="k" x1="186" y1="98" x2="238" y2="98"/>
+    <rect class="f" x="182" y="90" width="60" height="7" rx="1"/><rect class="f" x="208" y="97" width="7" height="11"/>
+    <rect class="k" x="252" y="90" width="22" height="10" rx="2"/>
+    <g class="sp"><line x1="252" y1="95" x2="242" y2="88"/><line x1="252" y1="95" x2="242" y2="103"/><line x1="252" y1="95" x2="239" y2="95"/></g>
+    ${worker(292,122,.95)}`,
+  robot:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="58" y="90" width="26" height="30" rx="2"/>
+    <path class="k" d="M71,90 L96,58 L150,50 L184,74" fill="none" stroke-width="3"/>
+    <circle class="f" cx="96" cy="58" r="5"/><circle class="f" cx="150" cy="50" r="5"/>
+    <line class="k" x1="184" y1="74" x2="190" y2="96"/>
+    <g class="sp"><line x1="190" y1="97" x2="182" y2="90"/><line x1="190" y1="97" x2="198" y2="90"/><line x1="190" y1="97" x2="190" y2="87"/><line x1="190" y1="97" x2="202" y2="99"/><line x1="190" y1="97" x2="178" y2="99"/></g>
+    <rect class="f" x="120" y="104" width="200" height="14" rx="1"/>
+    <line class="k" x1="190" y1="104" x2="300" y2="104" stroke-dasharray="7 5"/>
+    ${worker(360,118,.95)}`,
+  smwp:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
     <line class="k" x1="34" y1="40" x2="306" y2="40"/>
     <line class="k" x1="46" y1="40" x2="46" y2="118"/>
@@ -352,13 +372,20 @@ const SCENE = {
     <rect class="f" x="60" y="106" width="220" height="12" rx="1"/>
     <g class="k"><path d="M96,106 l0,-40 m-12,0 l24,0"/><path d="M140,106 l0,-40 m-12,0 l24,0"/><path d="M184,106 l0,-40 m-12,0 l24,0"/><path d="M228,106 l0,-40 m-12,0 l24,0"/></g>
     ${worker(360,118,.95)}`,
-  sub:`
+  bulkhead:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
     <path class="f" d="M120,60 L210,40 L300,60 L210,80 Z"/>
     <path class="f" d="M120,60 L120,104 L210,124 L210,80 Z"/>
     <path class="f" d="M300,60 L300,104 L210,124 L210,80 Z" opacity=".85"/>
     <g class="t"><line x1="147" y1="72" x2="147" y2="114"/><line x1="174" y1="78" x2="174" y2="120"/><line x1="210" y1="80" x2="210" y2="124"/></g>
     <g class="t"><line x1="246" y1="78" x2="246" y2="120"/><line x1="273" y1="72" x2="273" y2="114"/></g>
+    ${worker(360,118,.95)}`,
+  deck:`
+    <line class="t" x1="10" y1="122" x2="410" y2="122"/>
+    <rect class="f" x="60" y="70" width="230" height="40" rx="1"/>
+    <g class="t"><line x1="100" y1="70" x2="100" y2="110"/><line x1="140" y1="70" x2="140" y2="110"/><line x1="180" y1="70" x2="180" y2="110"/><line x1="220" y1="70" x2="220" y2="110"/><line x1="260" y1="70" x2="260" y2="110"/></g>
+    <g class="k"><rect x="150" y="130" width="20" height="12" rx="1" fill="var(--accent-bg)"/><rect x="184" y="130" width="20" height="12" rx="1"/><rect x="218" y="130" width="20" height="12" rx="1"/></g>
+    <g class="t"><path d="M172,136 l10,0 m-4,-4 l4,4 -4,4"/><path d="M206,136 l10,0 m-4,-4 l4,4 -4,4"/></g>
     ${worker(360,118,.95)}`,
   unit:`
     <line class="t" x1="10" y1="122" x2="410" y2="122"/>
@@ -372,7 +399,7 @@ const SCENE = {
     ${worker(360,118,.95)}
     <rect class="pf" x="344" y="96" width="12" height="15" rx="1"/>`
 };
-const CAP = { cut:"PLATE & PROFILE CUTTING", parts:"SMALL PARTS · SORT & ROUTE", store:"LAYDOWN & STORAGE HALLS", panel:"PANEL FABRICATION", stiff:"STIFFENER MOUNTING · PORTAL", sub:"SUB-ASSEMBLY & DRESSING", unit:"UNIT LINE · PULSE BEAT" };
+const CAP = { cut:"PLATE CUTTING", profile:"PROFILE & T-BAR CUTTING", bend:"PROFILE BENDING PRESS", dress:"DRESSING · CENTRAL HALL", robot:"PLATE ROBOT WELDER", smwp:"STIFFENER MOUNTING · PORTAL", bulkhead:"BULKHEAD FABRICATION", deck:"UNIT LINE · DECK PLATE (WS1)", unit:"UNIT LINE · WS 2–5" };
 function sceneSVG(id){
   const art = SCENE[id]; if(!art) return "";
   return `<svg class="scene" viewBox="0 0 420 150" role="img" aria-label="${esc(CAP[id]||"")}" preserveAspectRatio="xMidYMid meet"><text class="cap" x="14" y="22">${esc(CAP[id]||"")}</text>${art}</svg>`;
@@ -382,18 +409,33 @@ function sceneSVG(id){
    named cut.jpg, parts.jpg, store.jpg, panel.jpg, stiff.jpg, sub.jpg, unit.jpg
    (jpg / jpeg / png / webp all work). If a photo is there, it replaces the
    drawing for that station; if not, the drawing stays. Nothing to configure. */
-const PHOTO_DIR = "line-images/";
-const PHOTO_EXT = ["jpg","jpeg","png","webp","JPG","PNG"];
 const photoCache = {};
-function resolvePhoto(id){
+/* Build the list of photo URLs to try for a station. Each station's own file
+   names (its real station name, e.g. "Plate Robot Welder") come first, then
+   the id as a fallback. GitHub is case-sensitive and filenames have spaces and
+   "&", so we try a couple of folder capitalisations and URL-encode each name —
+   you shouldn't have to fuss over exact case or spaces. */
+function photoUrls(st){
+  const cap = st.id.charAt(0).toUpperCase() + st.id.slice(1);
+  const names = (st.img || []).concat([st.id, cap]);
+  const exts  = ["png","PNG","jpg","JPG","jpeg","webp"];
+  const dirs  = ["line-images/","Line-images/"];
+  const out = [], seen = {};
+  for(const d of dirs) for(const n of names) for(const e of exts){
+    const u = d + encodeURIComponent(n + "." + e);
+    if(!seen[u]){ seen[u]=1; out.push(u); }
+  }
+  return out;
+}
+function resolvePhoto(st){
   return new Promise(res=>{
-    if(id in photoCache){ res(photoCache[id]); return; }
-    let i=0;
+    if(st.id in photoCache){ res(photoCache[st.id]); return; }
+    const urls = photoUrls(st); let i=0;
     const tryNext=()=>{
-      if(i>=PHOTO_EXT.length){ photoCache[id]=null; res(null); return; }
-      const src = PHOTO_DIR + id + "." + PHOTO_EXT[i++];
+      if(i>=urls.length){ photoCache[st.id]=null; res(null); return; }
+      const src = urls[i++];
       const im = new Image();
-      im.onload = ()=>{ if(im.naturalWidth>0){ photoCache[id]=src; res(src); } else tryNext(); };
+      im.onload = ()=>{ if(im.naturalWidth>0){ photoCache[st.id]=src; res(src); } else tryNext(); };
       im.onerror = tryNext;
       im.src = src;
     };
@@ -402,8 +444,9 @@ function resolvePhoto(id){
 }
 function renderStationVisual(id){
   const box = $("#stVis"); if(!box) return;
+  const st = stById(id); if(!st) return;
   box.innerHTML = sceneSVG(id);            // show the drawing instantly
-  resolvePhoto(id).then(src=>{
+  resolvePhoto(st).then(src=>{
     if(!src) return;                        // no photo supplied — keep the drawing
     if(active!==id || mode!=="chat") return;// user already moved on
     const b = $("#stVis"); if(!b) return;
@@ -569,7 +612,7 @@ async function rootCause(){
 /* ---------- read-aloud (a distinct human voice per character) ---------- */
 const VOICE_OK = ("speechSynthesis" in window) && (typeof SpeechSynthesisUtterance !== "undefined");
 let voiceOn = VOICE_OK && localStorage.getItem(LS.voice)==="1";
-const SEX = { cut:"m", parts:"f", store:"m", panel:"m", stiff:"m", sub:"f", unit:"f" };
+const SEX = { cut:"m", profile:"f", bend:"m", dress:"m", robot:"m", smwp:"m", bulkhead:"f", deck:"f", unit:"f" };
 const FEMALE=/(female|samantha|karen|moira|tessa|fiona|serena|martha|kate|victoria|allison|ava|susan|zoe|zira|hazel|amelie|catherine|nicky|joana|luciana|sonia|libby|aria|jenny|michelle|emma|eva|clara|amber|ashley|nora|salli|joanna|kimberly)/i;
 const MALE=/(\bmale\b|daniel|arthur|oliver|alex|fred|aaron|david|george|mark|rishi|gordon|\blee\b|thomas|reed|guy|ryan|william|brian|eric|\btom\b|james|john|matthew|liam|joey|justin|kevin)/i;
 const BAD=/(espeak|e-speak|compact|pico|festival|robo|android speech|chromeos|chrome os)/i;
@@ -594,14 +637,16 @@ function voiceFor(id){
 /* cloud voices (ElevenLabs): natural, per-character, bypass the browser's built-in-voice limit */
 const EL_MODEL = "eleven_flash_v2_5";
 const ELEVEN = {
-  cut:  "JBFqnCBsd6RMkjVDRZzb", // George — British, gruff (cutting lead)
-  parts:"pFZP5JQG7iQjIQuC4Bku", // Lily — British, warm
-  store:"IKne3meq5aSn9XLyUdCD", // Charlie — Australian, casual
-  panel:"N2lVS1w4EtoT3dr4eOWO", // Callum — hoarse (welder)
-  stiff:"onwK4e9ZLuTAKqWW03F9", // Daniel — British, deep (portal lead)
-  sub:  "XrExE9yKIg1WjnnlVkGX", // Matilda — warm
-  unit: "Xb7hH8MSUJpSbSDYk0k2", // Alice — British, confident (supervisor)
-  _analyst:"nPczCjzI2devNBz1zQrb" // Brian — deep narrator (the diagnosis)
+  cut:     "JBFqnCBsd6RMkjVDRZzb", // George — British, gruff (plate cutting)
+  profile: "pFZP5JQG7iQjIQuC4Bku", // Lily — British, warm (profile cutting)
+  bend:    "IKne3meq5aSn9XLyUdCD", // Charlie — Australian, casual (bending press)
+  dress:   "cjVigY5qzO86Huf0OWal", // Eric — down-to-earth male (dressing)
+  robot:   "N2lVS1w4EtoT3dr4eOWO", // Callum — hoarse (robot weld cell)
+  smwp:    "onwK4e9ZLuTAKqWW03F9", // Daniel — British, deep (portal lead)
+  bulkhead:"XrExE9yKIg1WjnnlVkGX", // Matilda — warm (bulkhead assembly)
+  deck:    "Xb7hH8MSUJpSbSDYk0k2", // Alice — British, confident (unit WS1)
+  unit:    "EXAVITQu4vr4xnSDxMaL", // Sarah — warm, clear (unit supervisor)
+  _analyst:"nPczCjzI2devNBz1zQrb"  // Brian — deep narrator (the diagnosis)
 };
 const audioEl = new Audio(); audioEl.playsInline = true;
 let lastAudioUrl = null;
