@@ -73,7 +73,12 @@
   .chat-head h2{margin:0;font-size:1.05rem;}
   .chat-head .sub{font-size:.8rem;color:var(--muted);}
 
-  /* station scene (blueprint line-art of the machine + the person) */
+  /* station visual — a photo you supply, or the built-in blueprint drawing */
+  .visual{width:100%;max-width:520px;margin:2px auto 14px;}
+  .visual .scene{margin:0;max-width:100%;}
+  .visual-fig{position:relative;margin:0;}
+  .visual-fig img.photo{width:100%;display:block;border:1px solid var(--line);border-radius:12px;aspect-ratio:420/168;object-fit:cover;background:var(--panel-2);}
+  .visual-cap{position:absolute;top:0;left:0;right:0;padding:9px 13px;color:#fff;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.08em;border-radius:12px 12px 0 0;background:linear-gradient(180deg,rgba(13,26,46,.86),rgba(13,26,46,.5) 60%,rgba(13,26,46,0));}
   .scene{width:100%;max-width:520px;height:auto;display:block;margin:2px auto 14px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));}
   .scene .k{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .scene .t{fill:none;stroke:var(--accent);stroke-width:1;opacity:.42;stroke-linecap:round;stroke-linejoin:round;}
@@ -373,6 +378,39 @@ function sceneSVG(id){
   return `<svg class="scene" viewBox="0 0 420 150" role="img" aria-label="${esc(CAP[id]||"")}" preserveAspectRatio="xMidYMid meet"><text class="cap" x="14" y="22">${esc(CAP[id]||"")}</text>${art}</svg>`;
 }
 
+/* Optional real photos: drop files in a "line-images" folder next to this app,
+   named cut.jpg, parts.jpg, store.jpg, panel.jpg, stiff.jpg, sub.jpg, unit.jpg
+   (jpg / jpeg / png / webp all work). If a photo is there, it replaces the
+   drawing for that station; if not, the drawing stays. Nothing to configure. */
+const PHOTO_DIR = "line-images/";
+const PHOTO_EXT = ["jpg","jpeg","png","webp","JPG","PNG"];
+const photoCache = {};
+function resolvePhoto(id){
+  return new Promise(res=>{
+    if(id in photoCache){ res(photoCache[id]); return; }
+    let i=0;
+    const tryNext=()=>{
+      if(i>=PHOTO_EXT.length){ photoCache[id]=null; res(null); return; }
+      const src = PHOTO_DIR + id + "." + PHOTO_EXT[i++];
+      const im = new Image();
+      im.onload = ()=>{ if(im.naturalWidth>0){ photoCache[id]=src; res(src); } else tryNext(); };
+      im.onerror = tryNext;
+      im.src = src;
+    };
+    tryNext();
+  });
+}
+function renderStationVisual(id){
+  const box = $("#stVis"); if(!box) return;
+  box.innerHTML = sceneSVG(id);            // show the drawing instantly
+  resolvePhoto(id).then(src=>{
+    if(!src) return;                        // no photo supplied — keep the drawing
+    if(active!==id || mode!=="chat") return;// user already moved on
+    const b = $("#stVis"); if(!b) return;
+    b.innerHTML = `<figure class="visual-fig"><img class="photo" src="${esc(src)}" alt="${esc(CAP[id]||"")}"><figcaption class="visual-cap">${esc(CAP[id]||"")}</figcaption></figure>`;
+  });
+}
+
 /* ---------- render strip ---------- */
 function renderStrip(){
   $("#strip").innerHTML = STATIONS.map((s,idx)=>`
@@ -420,7 +458,8 @@ function openStation(id){
   stopSpeak();
   active=id; mode="chat"; renderStrip();
   const st=stById(id);
-  inner.innerHTML = `${sceneSVG(id)}<div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
+  inner.innerHTML = `<div class="visual" id="stVis"></div><div class="chat-head"><div class="head-face">${st.emoji}</div><div><h2>${esc(NAME(st))}</h2><div class="sub">${esc(st.role)} &middot; ${esc(SUB(st))}</div></div></div>`;
+  renderStationVisual(id);
   const conv = convos[id]||[];
   conv.forEach(m=> bubble(m.role, m.role==="assistant"?NAME(st):"You", st.emoji).innerHTML = md(m.content));
   if(!conv.length){
